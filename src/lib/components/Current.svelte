@@ -1,6 +1,6 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
-  import { describe } from '$lib/wmo';
+  import { describe, iconColor } from '$lib/wmo';
   import { fmtTemp, fmtTime, compassCode, uvLevel, kmhToBeaufort } from '$lib/format';
   import { t, locale } from '$lib/i18n.svelte';
   import type { Location, WeatherData } from '$lib/weather';
@@ -33,8 +33,8 @@
         · {t('low_short')} <span class="nums">{fmtTemp(today.temperature_2m_min?.[0])}</span>
       </div>
     </div>
-    <div class="flex flex-col items-center text-accent shrink-0">
-      <Icon name={w.icon} size={84} class="text-accent" />
+    <div class="flex flex-col items-center shrink-0">
+      <Icon name={w.icon} size={84} class={iconColor(w.icon)} />
       <div class="text-xs text-sub mt-1">{t(w.labelKey)}</div>
     </div>
   </div>

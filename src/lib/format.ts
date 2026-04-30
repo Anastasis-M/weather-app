@@ -1,5 +1,15 @@
 export const round = (n: number) => Math.round(n);
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function parseDateForFormat(iso: string): { date: Date; timeZone?: string } {
+  if (ISO_DATE.test(iso)) {
+    const [year, month, day] = iso.split('-').map(Number);
+    return { date: new Date(Date.UTC(year, month - 1, day)), timeZone: 'UTC' };
+  }
+  return { date: new Date(iso) };
+}
+
 export function fmtTemp(n: number | null | undefined): string {
   if (n == null || Number.isNaN(n)) return '—';
   return `${Math.round(n)}°`;
@@ -14,18 +24,26 @@ export function fmtTime(iso: string | null | undefined, tz?: string, locale?: st
 export const fmtHour = fmtTime;
 
 export function fmtDayShort(iso: string, tz?: string, locale?: string): string {
-  return new Date(iso).toLocaleDateString(locale ?? [], { weekday: 'short', timeZone: tz });
+  const { date, timeZone } = parseDateForFormat(iso);
+  return date.toLocaleDateString(locale ?? [], { weekday: 'short', timeZone: timeZone ?? tz });
 }
 
 export function fmtDayLong(iso: string, tz?: string, locale?: string): string {
-  return new Date(iso).toLocaleDateString(locale ?? [], { weekday: 'long', timeZone: tz });
+  const { date, timeZone } = parseDateForFormat(iso);
+  return date.toLocaleDateString(locale ?? [], { weekday: 'long', timeZone: timeZone ?? tz });
 }
 
 export function fmtDate(iso: string, tz?: string, locale?: string): string {
-  return new Date(iso).toLocaleDateString(locale ?? [], { day: '2-digit', month: '2-digit', timeZone: tz });
+  const { date, timeZone } = parseDateForFormat(iso);
+  return date.toLocaleDateString(locale ?? [], { day: '2-digit', month: '2-digit', timeZone: timeZone ?? tz });
 }
 
 export function isSameYMD(aIso: string, bIso: string, tz?: string): boolean {
+  const aPrefix = aIso.slice(0, 10);
+  const bPrefix = bIso.slice(0, 10);
+  if (ISO_DATE.test(aPrefix) && ISO_DATE.test(bPrefix)) {
+    return aPrefix === bPrefix;
+  }
   const a = new Date(aIso).toLocaleDateString('en-CA', { timeZone: tz });
   const b = new Date(bIso).toLocaleDateString('en-CA', { timeZone: tz });
   return a === b;

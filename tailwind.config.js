@@ -17,6 +17,7 @@ export default {
         mute: '#6b6b75',
         accent: '#fbbf24',
         rain: '#60a5fa',
+        snow: '#bae6fd',
         warn: '#f59e0b'
       },
       fontVariantNumeric: {

@@ -98,6 +98,11 @@
     <path d="M21 12a9 9 0 0 1-15.5 6.3L3 16" />
     <path d="M3 21v-5h5" />
   </svg>
+{:else if name === 'cursor'}
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class={cls}>
+    <path d="M12 2 20 20l-8-4-8 4L12 2Z" />
+    <path d="M12 16V7" />
+  </svg>
 {:else if name === 'arrow'}
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class={cls}>
     <path d="M12 19V5M5 12l7-7 7 7" />

@@ -36,6 +36,7 @@ const DAILY = [
   'precipitation_sum',
   'precipitation_probability_max',
   'wind_speed_10m_max',
+  'wind_direction_10m_dominant',
   'uv_index_max'
 ].join(',');
 
@@ -62,7 +63,7 @@ export async function fetchWeather({ latitude, longitude }: { latitude: number; 
   u.searchParams.set('wind_speed_unit', 'kmh');
   u.searchParams.set('temperature_unit', 'celsius');
   u.searchParams.set('precipitation_unit', 'mm');
-  const r = await fetch(u);
+  const r = await fetch(u, { cache: 'no-store' });
   if (!r.ok) throw new Error('Weather request failed');
   return r.json();
 }

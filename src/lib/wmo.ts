@@ -4,6 +4,22 @@ export type IconName =
 
 export type Description = { labelKey: string; icon: IconName };
 
+export function iconColor(icon: IconName): string {
+  switch (icon) {
+    case 'sun':        return 'text-accent';
+    case 'cloud-sun':  return 'text-accent';
+    case 'moon':       return 'text-sub';
+    case 'cloud-moon': return 'text-sub';
+    case 'cloud':      return 'text-sub';
+    case 'fog':        return 'text-mute';
+    case 'drizzle':    return 'text-rain';
+    case 'rain':       return 'text-rain';
+    case 'sleet':      return 'text-rain';
+    case 'snow':       return 'text-snow';
+    case 'storm':      return 'text-warn';
+  }
+}
+
 // WMO weather code → translation key + icon. Components run the key through t().
 export function describe(code: number, isDay: number | boolean = 1): Description {
   const day = isDay === 1 || isDay === true;

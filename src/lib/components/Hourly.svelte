@@ -1,6 +1,6 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
-  import { describe } from '$lib/wmo';
+  import { describe, iconColor } from '$lib/wmo';
   import { fmtHour, fmtTemp } from '$lib/format';
   import { t, locale } from '$lib/i18n.svelte';
   import type { WeatherData } from '$lib/weather';
@@ -47,7 +47,7 @@
           {@const w = describe(h.code, h.isDay)}
           <li class="flex flex-col items-center gap-1 px-3 py-1 min-w-[64px]">
             <span class="text-xs text-sub nums">{i === 0 ? t('now') : fmtHour(h.time, tz, locale())}</span>
-            <Icon name={w.icon} size={26} class={h.isDay ? 'text-accent' : 'text-sub'} />
+            <Icon name={w.icon} size={26} class={iconColor(w.icon)} />
             {#if h.pop >= 20}
               <span class="text-[10px] text-rain nums leading-none">{h.pop}%</span>
             {:else}
