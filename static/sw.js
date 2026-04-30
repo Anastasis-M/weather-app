@@ -32,9 +32,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Same-origin assets: cache-first.
+  // Same-origin: network-first for navigation (HTML), cache-first for hashed assets.
   if (url.origin === self.location.origin) {
-    event.respondWith(cacheFirst(request));
+    if (request.mode === 'navigate') {
+      event.respondWith(networkFirst(request));
+    } else {
+      event.respondWith(cacheFirst(request));
+    }
     return;
   }
 
@@ -56,6 +60,18 @@ async function cacheFirst(request) {
       if (fallback) return fallback;
     }
     return new Response('Offline', { status: 503 });
+  }
+}
+
+async function networkFirst(request) {
+  const cache = await caches.open(APP_CACHE);
+  try {
+    const res = await fetch(request);
+    if (res.ok) cache.put(request, res.clone());
+    return res;
+  } catch {
+    const cached = await cache.match(request);
+    return cached || new Response('Offline', { status: 503 });
   }
 }
 
