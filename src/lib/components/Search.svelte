@@ -82,6 +82,13 @@
             class="flex-1 min-w-0 bg-transparent outline-none text-[15px] placeholder:text-mute"
             autocomplete="off"
             enterkeyhint="search"
+            role="combobox"
+            aria-expanded={open && (results.length > 0 || loading)}
+            aria-controls="search-listbox"
+            aria-autocomplete="list"
+            aria-activedescendant={active >= 0
+                ? `search-result-${active}`
+                : undefined}
         />
         <button
             type="button"
@@ -96,8 +103,10 @@
 
     {#if open && (results.length > 0 || loading)}
         <ul
+            id="search-listbox"
             class="absolute left-0 right-0 mt-2 z-30 rounded-2xl bg-panel hairline overflow-hidden max-h-80 overflow-y-auto"
             role="listbox"
+            aria-label={t("search_placeholder")}
         >
             {#if loading && results.length === 0}
                 <li class="px-3 py-3 text-sm text-sub">{t("searching")}</li>
@@ -105,6 +114,7 @@
             {#each results as r, i}
                 <li>
                     <button
+                        id="search-result-{i}"
                         type="button"
                         class="w-full text-left px-3 py-2.5 flex items-baseline gap-2 hover:bg-panel2 transition {i ===
                         active
