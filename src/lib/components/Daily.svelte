@@ -98,7 +98,9 @@
                         <span class="text-sub nums text-sm w-9 text-right"
                             >{fmtTemp(min)}</span
                         >
-                        <span class="block min-[400px]:hidden">-</span>
+                        <span class="block min-[400px]:hidden text-sm text-mute"
+                            >-</span
+                        >
                         <div
                             class="relative hidden min-[400px]:flex flex-1 h-1.5 rounded-full bg-panel2 overflow-hidden"
                         >
