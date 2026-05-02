@@ -11,6 +11,8 @@
         reverseGeocode,
         saveLocation,
         loadLocation,
+        saveAutofetch,
+        loadAutofetch,
         type Location,
         type WeatherData,
     } from "$lib/weather";
@@ -22,6 +24,25 @@
     let refreshing = $state(false);
     let error = $state("");
     let updated = $state<Date | null>(null);
+
+    // ── Auto-fetch every hour ──────────────────────────────────────
+    const AUTOFETCH_MS = 60 * 60 * 1000;
+    let autofetch = $state(false); // real value loaded in onMount
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+
+    function armInterval() {
+        clearInterval(intervalId);
+        intervalId =
+            autofetch && !!place
+                ? setInterval(refresh, AUTOFETCH_MS)
+                : undefined;
+    }
+
+    function toggleAutofetch() {
+        autofetch = !autofetch;
+        saveAutofetch(autofetch);
+        armInterval();
+    }
 
     // ── Pull-to-refresh ────────────────────────────────────────────
     const PULL_THRESHOLD = 64; // damped px needed to arm a refresh
@@ -91,6 +112,7 @@
             place = loc;
             updated = new Date();
             saveLocation(loc);
+            armInterval();
         } catch (e: any) {
             error = e?.message || t("fetch_failed");
         } finally {
@@ -106,6 +128,7 @@
             const w = await fetchWeather(place);
             data = w;
             updated = new Date();
+            armInterval(); // reset the 1-hour timer
         } catch (e: any) {
             error = e?.message || t("refresh_failed");
         } finally {
@@ -144,9 +167,28 @@
     onMount(async () => {
         initLang();
         document.documentElement.lang = i18n.lang;
+        autofetch = loadAutofetch();
         const saved = loadLocation();
         if (saved) await load(saved);
         else await locate();
+    });
+
+    onMount(() => () => clearInterval(intervalId));
+
+    onMount(() => {
+        const onVisible = () => {
+            if (
+                document.visibilityState === "visible" &&
+                autofetch &&
+                updated &&
+                place
+            ) {
+                if (Date.now() - updated.getTime() >= AUTOFETCH_MS) refresh();
+            }
+        };
+        document.addEventListener("visibilitychange", onVisible);
+        return () =>
+            document.removeEventListener("visibilitychange", onVisible);
     });
 
     onMount(() => {
@@ -209,6 +251,18 @@
                 {i18n.lang === "en" ? "EN" : "ΕΛ"}
             </button>
             {#if data}
+                <button
+                    type="button"
+                    onclick={toggleAutofetch}
+                    class="h-11 w-11 shrink-0 rounded-2xl hairline flex items-center justify-center transition {autofetch
+                        ? 'bg-accent/15 text-accent'
+                        : 'bg-panel text-sub hover:text-ink hover:bg-panel2'}"
+                    aria-label={t("autofetch")}
+                    title={t("autofetch")}
+                    aria-pressed={autofetch}
+                >
+                    <Icon name="clock" size={18} />
+                </button>
                 <button
                     type="button"
                     onclick={refresh}
