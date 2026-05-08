@@ -42,9 +42,10 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
 
-  // Open-Meteo: stale-while-revalidate.
+  // Open-Meteo: network-first so the page always receives fresh weather data.
+  // Falls back to the last cached response only when the network is unreachable.
   if (url.hostname.endsWith("open-meteo.com")) {
-    event.respondWith(staleWhileRevalidate(request));
+    event.respondWith(networkFirstWeather(request));
     return;
   }
 
@@ -92,14 +93,15 @@ async function networkFirst(request) {
   }
 }
 
-async function staleWhileRevalidate(request) {
+async function networkFirstWeather(request) {
   const cache = await caches.open(RUNTIME_CACHE);
-  const cached = await cache.match(request);
-  const network = fetch(request)
-    .then((res) => {
-      if (res.ok) cache.put(request, res.clone());
-      return res;
-    })
-    .catch(() => cached ?? new Response(null, { status: 503 }));
-  return cached || network;
+  try {
+    const res = await fetch(request);
+    if (res.ok) cache.put(request, res.clone());
+    return res;
+  } catch {
+    // Network unavailable — serve the last known data so the app stays usable offline.
+    const cached = await cache.match(request);
+    return cached ?? new Response(null, { status: 503 });
+  }
 }
