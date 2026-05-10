@@ -11,8 +11,6 @@
         reverseGeocode,
         saveLocation,
         loadLocation,
-        saveAutofetch,
-        loadAutofetch,
         type Location,
         type WeatherData,
     } from "$lib/weather";
@@ -55,21 +53,11 @@
 
     // ── Auto-fetch every hour ──────────────────────────────────────
     const AUTOFETCH_MS = 60 * 60 * 1000;
-    let autofetch = $state(false); // real value loaded in onMount
     let intervalId: ReturnType<typeof setInterval> | undefined;
 
     function armInterval() {
         clearInterval(intervalId);
-        intervalId =
-            autofetch && !!place
-                ? setInterval(refresh, AUTOFETCH_MS)
-                : undefined;
-    }
-
-    function toggleAutofetch() {
-        autofetch = !autofetch;
-        saveAutofetch(autofetch);
-        armInterval();
+        intervalId = place ? setInterval(refresh, AUTOFETCH_MS) : undefined;
     }
 
     // ── Pull-to-refresh ────────────────────────────────────────────
@@ -202,8 +190,6 @@
     onMount(async () => {
         initLang();
         document.documentElement.lang = i18n.lang;
-        autofetch = loadAutofetch();
-
         // A shared link (/share?...) redirects here with URL params — honour them first
         const params = new URLSearchParams(window.location.search);
         const pLat = parseFloat(params.get("lat") ?? "");
@@ -223,12 +209,7 @@
 
     onMount(() => {
         const onVisible = () => {
-            if (
-                document.visibilityState === "visible" &&
-                autofetch &&
-                updated &&
-                place
-            ) {
+            if (document.visibilityState === "visible" && updated && place) {
                 if (Date.now() - updated.getTime() >= AUTOFETCH_MS) refresh();
             }
         };
@@ -283,7 +264,7 @@
     </div>
 
     <header class="px-5 pt-4 pb-3 sticky top-0 z-20 bg-bg/85 backdrop-blur-md">
-        <div class="flex items-center gap-2">
+        <div class="relative flex items-center gap-2">
             <div class="flex-1 min-w-0">
                 <Search onSelect={load} onLocate={locate} />
             </div>
@@ -310,21 +291,9 @@
                 </button>
                 <button
                     type="button"
-                    onclick={toggleAutofetch}
-                    class="h-11 w-11 shrink-0 rounded-2xl hairline flex items-center justify-center transition {autofetch
-                        ? 'bg-accent/15 text-accent'
-                        : 'bg-panel text-sub hover:text-ink hover:bg-panel2'}"
-                    aria-label={t("autofetch")}
-                    title={t("autofetch")}
-                    aria-pressed={autofetch}
-                >
-                    <Icon name="clock" size={18} />
-                </button>
-                <button
-                    type="button"
                     onclick={refresh}
                     disabled={refreshing}
-                    class="h-11 w-11 shrink-0 rounded-2xl bg-panel hairline flex items-center justify-center text-sub hover:text-ink hover:bg-panel2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="hidden sm:flex h-11 w-11 shrink-0 rounded-2xl bg-panel hairline items-center justify-center text-sub hover:text-ink hover:bg-panel2 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label={t("refresh")}
                     title={t("refresh")}
                 >

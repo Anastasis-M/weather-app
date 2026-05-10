@@ -15,6 +15,7 @@
     let loading = $state(false);
     let active = $state(-1);
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let container: HTMLDivElement;
 
     function run(value: string) {
         clearTimeout(timer);
@@ -68,7 +69,7 @@
     }
 </script>
 
-<div class="relative w-full">
+<div class="w-full" bind:this={container}>
     <div
         class="flex items-center gap-2 rounded-2xl bg-panel hairline px-3 h-11 overflow-hidden"
     >
@@ -104,7 +105,7 @@
     {#if open && (results.length > 0 || loading)}
         <ul
             id="search-listbox"
-            class="absolute left-0 right-0 mt-2 z-30 rounded-2xl bg-panel hairline overflow-hidden max-h-80 overflow-y-auto"
+            class="absolute left-0 right-0 top-full mt-2 z-30 rounded-2xl bg-panel hairline overflow-hidden max-h-80 overflow-y-auto"
             role="listbox"
             aria-label={t("search_placeholder")}
         >
@@ -138,7 +139,6 @@
 
 <svelte:window
     onclick={(e: MouseEvent) => {
-        if (!(e.target instanceof Element)) return;
-        if (!e.target.closest(".relative")) open = false;
+        if (container && !container.contains(e.target as Node)) open = false;
     }}
 />
