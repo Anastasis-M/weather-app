@@ -25,6 +25,34 @@
     let error = $state("");
     let updated = $state<Date | null>(null);
 
+    // ── Share ──────────────────────────────────────────────────────
+    let copied = $state(false);
+    let copiedTimer: ReturnType<typeof setTimeout> | undefined;
+
+    async function share() {
+        if (!place) return;
+        const params = new URLSearchParams({
+            lat: String(place.latitude),
+            lon: String(place.longitude),
+            name: place.shortName,
+        });
+        const url = `${window.location.origin}/share?${params}`;
+
+        if (navigator.canShare?.({ url }) && navigator.share) {
+            try {
+                await navigator.share({ title: `Weather in ${place.shortName}`, url });
+                return;
+            } catch (e) {
+                if ((e as Error).name === "AbortError") return;
+            }
+        }
+
+        await navigator.clipboard.writeText(url);
+        clearTimeout(copiedTimer);
+        copied = true;
+        copiedTimer = setTimeout(() => { copied = false; }, 2000);
+    }
+
     // ── Auto-fetch every hour ──────────────────────────────────────
     const AUTOFETCH_MS = 60 * 60 * 1000;
     let autofetch = $state(false); // real value loaded in onMount
@@ -113,6 +141,13 @@
             updated = new Date();
             saveLocation(loc);
             armInterval();
+            // Keep the URL in sync so the current location is always shareable
+            const p = new URLSearchParams({
+                lat: String(loc.latitude),
+                lon: String(loc.longitude),
+                name: loc.shortName,
+            });
+            history.replaceState({}, "", `?${p}`);
         } catch (e: any) {
             error = e?.message || t("fetch_failed");
         } finally {
@@ -168,6 +203,17 @@
         initLang();
         document.documentElement.lang = i18n.lang;
         autofetch = loadAutofetch();
+
+        // A shared link (/share?...) redirects here with URL params — honour them first
+        const params = new URLSearchParams(window.location.search);
+        const pLat = parseFloat(params.get("lat") ?? "");
+        const pLon = parseFloat(params.get("lon") ?? "");
+        const pName = params.get("name") ?? "";
+        if (pLat && pLon && pName) {
+            await load({ name: pName, shortName: pName, latitude: pLat, longitude: pLon });
+            return;
+        }
+
         const saved = loadLocation();
         if (saved) await load(saved);
         else await locate();
@@ -251,6 +297,17 @@
                 {i18n.lang === "en" ? "EN" : "ΕΛ"}
             </button>
             {#if data}
+                <button
+                    type="button"
+                    onclick={share}
+                    class="h-11 w-11 shrink-0 rounded-2xl hairline flex items-center justify-center transition {copied
+                        ? 'bg-accent/15 text-accent'
+                        : 'bg-panel text-sub hover:text-ink hover:bg-panel2'}"
+                    aria-label="Share"
+                    title="Share"
+                >
+                    <Icon name={copied ? "check" : "share"} size={18} />
+                </button>
                 <button
                     type="button"
                     onclick={toggleAutofetch}
