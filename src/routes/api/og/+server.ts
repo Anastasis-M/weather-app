@@ -70,14 +70,31 @@ const el = (style: Record<string, any>, children: any = null): El => ({
   props: { style, children },
 });
 
+// Cap to keep rendering bounded and reject obviously-bogus inputs before
+// they reach Open-Meteo or Satori.
+const NAME_MAX = 100;
+
+function validParams(lat: number, lon: number, name: string) {
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lon) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lon >= -180 &&
+    lon <= 180 &&
+    name.length > 0 &&
+    name.length <= NAME_MAX
+  );
+}
+
 export const GET: RequestHandler = async ({ url, fetch }) => {
   const lat = parseFloat(url.searchParams.get('lat') ?? '');
   const lon = parseFloat(url.searchParams.get('lon') ?? '');
-  const name = url.searchParams.get('name') ?? '';
+  const name = (url.searchParams.get('name') ?? '').slice(0, NAME_MAX);
   const city = (name.split(',')[0] || name).trim();
 
-  if (!lat || !lon || !city) {
-    return new Response('Missing lat/lon/name', { status: 400 });
+  if (!validParams(lat, lon, name) || !city) {
+    return new Response('Invalid lat/lon/name', { status: 400 });
   }
 
   const api = new URL('https://api.open-meteo.com/v1/forecast');

@@ -29,10 +29,27 @@ const WMO_EN: Record<string, string> = {
   'wmo.unknown': 'Weather',
 };
 
+// Cap name length to bound rendering / OG tag size and reject obviously
+// bogus inputs before they reach Open-Meteo.
+const NAME_MAX = 100;
+
+function validParams(lat: number, lon: number, name: string) {
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lon) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lon >= -180 &&
+    lon <= 180 &&
+    name.length > 0 &&
+    name.length <= NAME_MAX
+  );
+}
+
 export const load: PageServerLoad = async ({ url, setHeaders }) => {
   const lat = parseFloat(url.searchParams.get('lat') ?? '');
   const lon = parseFloat(url.searchParams.get('lon') ?? '');
-  const name = url.searchParams.get('name') ?? '';
+  const name = (url.searchParams.get('name') ?? '').slice(0, NAME_MAX);
 
   // City is the first segment before a comma — used in OG title
   const city = name.split(',')[0].trim() || name;
@@ -41,7 +58,7 @@ export const load: PageServerLoad = async ({ url, setHeaders }) => {
   // endpoint is spammed, since each miss would otherwise fan out to Open-Meteo.
   setHeaders({ 'cache-control': 'public, max-age=300, s-maxage=300' });
 
-  if (!lat || !lon || !name) {
+  if (!validParams(lat, lon, name)) {
     return { valid: false as const, name: '', city: '', lat: 0, lon: 0, origin: url.origin };
   }
 
