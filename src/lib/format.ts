@@ -15,6 +15,13 @@ export function fmtTemp(n: number | null | undefined): string {
   return `${Math.round(n)}°`;
 }
 
+// Compact precipitation amount for hourly tiles — drops the decimal once
+// we cross 10 mm so the label still fits a 56–64px column.
+export function fmtMm(n: number | null | undefined): string {
+  if (n == null || Number.isNaN(n)) return '';
+  return n >= 10 ? `${Math.round(n)}mm` : `${n.toFixed(1)}mm`;
+}
+
 export function fmtTime(iso: string | null | undefined, tz?: string, locale?: string): string {
   if (!iso) return '—';
   const d = new Date(iso);

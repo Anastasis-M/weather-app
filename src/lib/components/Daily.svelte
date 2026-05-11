@@ -6,6 +6,7 @@
         fmtHour,
         fmtDayShort,
         fmtDate,
+        fmtMm,
         isSameYMD,
         kmhToBeaufort,
     } from "$lib/format";
@@ -46,6 +47,7 @@
                     code: hourly.weather_code[i],
                     isDay: hourly.is_day[i],
                     pop: hourly.precipitation_probability?.[i] ?? 0,
+                    precip: hourly.precipitation?.[i] ?? 0,
                     wind: hourly.wind_speed_10m?.[i] ?? 0,
                     humidity: hourly.relative_humidity_2m?.[i] ?? 0,
                 });
@@ -205,9 +207,15 @@
                                             size={20}
                                             class={iconColor(hw.icon)}
                                         />
-                                        {#if h.pop >= 20}
+                                        {#if h.precip > 0}
                                             <span
                                                 class="text-[10px] text-rain nums leading-none"
+                                                title={t("precip")}
+                                                >{fmtMm(h.precip)}</span
+                                            >
+                                        {:else if h.pop >= 20}
+                                            <span
+                                                class="text-[10px] text-rain/70 nums leading-none"
                                                 >{h.pop}%</span
                                             >
                                         {:else}
