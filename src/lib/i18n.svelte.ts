@@ -20,6 +20,7 @@ const dict = {
     refresh_failed: "Failed to refresh",
     could_not_get_location: "Could not get location",
     current_location: "Current location",
+    offline_cached: "Offline — showing last saved forecast",
     // current
     feels_like: "Feels like",
     high_short: "H",
@@ -117,6 +118,7 @@ const dict = {
     refresh_failed: "Αποτυχία ανανέωσης",
     could_not_get_location: "Αδυναμία λήψης τοποθεσίας",
     current_location: "Τρέχουσα τοποθεσία",
+    offline_cached: "Εκτός σύνδεσης — προβολή αποθηκευμένης πρόγνωσης",
     feels_like: "Αίσθηση",
     high_short: "Υ",
     low_short: "Χ",

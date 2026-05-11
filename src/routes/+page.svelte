@@ -11,6 +11,8 @@
         reverseGeocode,
         saveLocation,
         loadLocation,
+        saveWeather,
+        loadWeather,
         type Location,
         type WeatherData,
     } from "$lib/weather";
@@ -119,6 +121,23 @@
         pullY = 0;
     }
 
+    // Hydrate from the persisted forecast when the network is unreachable.
+    // Returns true if we recovered something useful to render.
+    function hydrateFromCache(preferred?: Location): boolean {
+        const cached = loadWeather();
+        if (!cached) return false;
+        // Use the requested location only when it matches the cached coords
+        // (~10km); otherwise show the cached place so the data stays honest.
+        const sameSpot =
+            !!preferred &&
+            Math.abs(preferred.latitude - cached.location.latitude) < 0.1 &&
+            Math.abs(preferred.longitude - cached.location.longitude) < 0.1;
+        data = cached.data;
+        place = sameSpot ? preferred! : cached.location;
+        updated = new Date(cached.fetchedAt);
+        return true;
+    }
+
     async function load(loc: Location) {
         loading = true;
         error = "";
@@ -128,6 +147,7 @@
             place = loc;
             updated = new Date();
             saveLocation(loc);
+            saveWeather(loc, w);
             armInterval();
             // Keep the URL in sync so the current location is always shareable
             const p = new URLSearchParams({
@@ -137,7 +157,14 @@
             });
             history.replaceState({}, "", `?${p}`);
         } catch (e: any) {
-            error = e?.message || t("fetch_failed");
+            // Offline / network blip — render the last saved forecast so the
+            // PWA isn't a blank page. We still surface the state via a banner.
+            if (hydrateFromCache(loc)) {
+                error = t("offline_cached");
+                armInterval();
+            } else {
+                error = e?.message || t("fetch_failed");
+            }
         } finally {
             loading = false;
         }
@@ -151,9 +178,13 @@
             const w = await fetchWeather(place);
             data = w;
             updated = new Date();
+            saveWeather(place, w);
             armInterval(); // reset the 1-hour timer
         } catch (e: any) {
-            error = e?.message || t("refresh_failed");
+            // Keep showing whatever we have; only flag the failure.
+            error = navigator.onLine
+                ? e?.message || t("refresh_failed")
+                : t("offline_cached");
         } finally {
             refreshing = false;
             pullY = 0;
@@ -216,6 +247,20 @@
         document.addEventListener("visibilitychange", onVisible);
         return () =>
             document.removeEventListener("visibilitychange", onVisible);
+    });
+
+    // Auto-recover once the network returns. If we were showing cached
+    // data (or had nothing at all), this swaps in a fresh forecast.
+    onMount(() => {
+        const onOnline = () => {
+            if (place) refresh();
+            else {
+                const saved = loadLocation();
+                if (saved) load(saved);
+            }
+        };
+        window.addEventListener("online", onOnline);
+        return () => window.removeEventListener("online", onOnline);
     });
 
     onMount(() => {

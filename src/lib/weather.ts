@@ -163,3 +163,33 @@ export function loadLocation(): Location | null {
     return null;
   }
 }
+
+// ── Offline cache ────────────────────────────────────────────────
+// The service worker's runtime cache already keeps the last Open-Meteo
+// response, but persisting it here too means the UI can rehydrate even
+// before the SW takes control (first hit on a new device, private mode,
+// iOS edge cases) — and we keep the original fetch time around so the
+// "Updated" footer stays honest.
+const WEATHER_KEY = "weather:last:v1";
+
+export type CachedWeather = {
+  location: Location;
+  data: WeatherData;
+  fetchedAt: number;
+};
+
+export function saveWeather(location: Location, data: WeatherData): void {
+  try {
+    const payload: CachedWeather = { location, data, fetchedAt: Date.now() };
+    localStorage.setItem(WEATHER_KEY, JSON.stringify(payload));
+  } catch {}
+}
+
+export function loadWeather(): CachedWeather | null {
+  try {
+    const raw = localStorage.getItem(WEATHER_KEY);
+    return raw ? (JSON.parse(raw) as CachedWeather) : null;
+  } catch {
+    return null;
+  }
+}

@@ -88,7 +88,12 @@ async function networkFirst(request) {
     if (res.ok) cache.put(request, res.clone());
     return res;
   } catch {
-    const cached = await cache.match(request);
+    // Offline navigation: a deep link like /?lat=…&lon=… won't match the
+    // cached "/" entry by exact URL, so ignore query and fall back to the
+    // app shell. The SPA then rehydrates from localStorage.
+    const cached =
+      (await cache.match(request, { ignoreSearch: true })) ||
+      (await cache.match("/"));
     return cached || new Response("Offline", { status: 503 });
   }
 }
@@ -100,8 +105,12 @@ async function networkFirstWeather(request) {
     if (res.ok) cache.put(request, res.clone());
     return res;
   } catch {
-    // Network unavailable — serve the last known data so the app stays usable offline.
-    const cached = await cache.match(request);
+    // Network unavailable — serve the last known data so the app stays usable
+    // offline. ignoreSearch lets us tolerate volatile params (e.g. a bumped
+    // forecast_days) and still return a useful payload for the same location.
+    const cached =
+      (await cache.match(request)) ||
+      (await cache.match(request, { ignoreSearch: true }));
     return cached ?? new Response(null, { status: 503 });
   }
 }
