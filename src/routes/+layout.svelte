@@ -2,6 +2,8 @@
     import "../app.css";
     import { onMount } from "svelte";
     import { updated } from "$app/state";
+    import { Toaster } from "$lib/components/ui/sonner";
+    import { TooltipProvider } from "$lib/components/ui/tooltip";
 
     let { children } = $props();
 
@@ -23,4 +25,7 @@
     });
 </script>
 
-{@render children()}
+<TooltipProvider delayDuration={200}>
+    {@render children()}
+</TooltipProvider>
+<Toaster richColors position="top-center" />

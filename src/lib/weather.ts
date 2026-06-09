@@ -1,4 +1,5 @@
 const FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
+const AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality";
 const GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1/search";
 const REVERSE_URL = "https://geocoding-api.open-meteo.com/v1/reverse";
 
@@ -51,6 +52,31 @@ const CURRENT = [
   "wind_direction_10m",
 ].join(",");
 
+const AIR_QUALITY_CURRENT = [
+  "european_aqi",
+  "us_aqi",
+  "pm10",
+  "pm2_5",
+].join(",");
+
+async function fetchAirQuality({
+  latitude,
+  longitude,
+}: {
+  latitude: number;
+  longitude: number;
+}): Promise<WeatherData | null> {
+  const u = new URL(AIR_QUALITY_URL);
+  u.searchParams.set("latitude", String(latitude));
+  u.searchParams.set("longitude", String(longitude));
+  u.searchParams.set("current", AIR_QUALITY_CURRENT);
+  u.searchParams.set("timezone", "auto");
+  u.searchParams.set("forecast_days", "1");
+  const r = await fetch(u, { cache: "no-store" });
+  if (!r.ok) return null;
+  return r.json();
+}
+
 export async function fetchWeather({
   latitude,
   longitude,
@@ -69,9 +95,13 @@ export async function fetchWeather({
   u.searchParams.set("wind_speed_unit", "kmh");
   u.searchParams.set("temperature_unit", "celsius");
   u.searchParams.set("precipitation_unit", "mm");
-  const r = await fetch(u, { cache: "no-store" });
+  const [r, airQuality] = await Promise.all([
+    fetch(u, { cache: "no-store" }),
+    fetchAirQuality({ latitude, longitude }).catch(() => null),
+  ]);
   if (!r.ok) throw new Error("Weather request failed");
-  return r.json();
+  const weather = await r.json();
+  return { ...weather, airQuality };
 }
 
 export async function searchPlaces(

@@ -1,10 +1,20 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { toast } from "svelte-sonner";
+    import LanguagesIcon from "@lucide/svelte/icons/languages";
+    import RefreshIcon from "@lucide/svelte/icons/refresh-cw";
+    import ShareIcon from "@lucide/svelte/icons/share-2";
+    import CheckIcon from "@lucide/svelte/icons/check";
+    import ArrowUpIcon from "@lucide/svelte/icons/arrow-up";
+    import SunIcon from "@lucide/svelte/icons/sun";
     import Search from "$lib/components/Search.svelte";
     import Current from "$lib/components/Current.svelte";
-    import Hourly from "$lib/components/Hourly.svelte";
     import Daily from "$lib/components/Daily.svelte";
-    import Icon from "$lib/components/Icon.svelte";
+    import { Button } from "$lib/components/ui/button";
+    import { Badge } from "$lib/components/ui/badge";
+    import * as Alert from "$lib/components/ui/alert";
+    import * as Tooltip from "$lib/components/ui/tooltip";
+    import { Skeleton } from "$lib/components/ui/skeleton";
     import {
         fetchWeather,
         getCurrentPosition,
@@ -51,6 +61,7 @@
         clearTimeout(copiedTimer);
         copied = true;
         copiedTimer = setTimeout(() => { copied = false; }, 2000);
+        toast.success(t("copied") ?? "Link copied");
     }
 
     // ── Auto-fetch every hour ──────────────────────────────────────
@@ -282,7 +293,7 @@
     });
 </script>
 
-<main class="mx-auto w-full max-w-2xl safe-pt safe-pb">
+<main class="safe-pt safe-pb mx-auto min-h-screen w-full max-w-6xl lg:flex lg:h-screen lg:min-h-0 lg:flex-col lg:overflow-hidden">
     <!-- Pull-to-refresh indicator -->
     <div
         class="flex items-end justify-center overflow-hidden"
@@ -291,94 +302,152 @@
             : 0}px;transition:height {pulling ? 0 : 300}ms ease"
         aria-hidden="true"
     >
-        <div
-            class="mb-2 w-10 h-10 rounded-full bg-panel hairline flex items-center justify-center"
+        <Badge
+            variant="outline"
+            class="weather-card mb-2 flex size-10 rounded-full p-0 text-muted-foreground"
         >
             {#if refreshing}
-                <Icon name="refresh" size={16} class="text-sub animate-spin" />
+                <RefreshIcon class="size-4 animate-spin" />
             {:else}
-                <Icon
-                    name="arrow"
-                    size={16}
-                    class="text-sub transition-transform duration-200 {pullReady
+                <ArrowUpIcon
+                    class="size-4 transition-transform duration-200 {pullReady
                         ? 'rotate-180'
                         : ''}"
                 />
             {/if}
-        </div>
+        </Badge>
     </div>
 
-    <header class="px-5 pt-4 pb-3 sticky top-0 z-20 bg-bg/85 backdrop-blur-md">
+    <header class="sticky top-0 z-20 bg-background/85 px-5 pt-4 pb-4 backdrop-blur-md lg:pt-5 lg:pb-5">
         <div class="relative flex items-center gap-2">
             <div class="flex-1 min-w-0">
                 <Search onSelect={load} onLocate={locate} />
             </div>
-            <button
-                type="button"
-                onclick={toggleLang}
-                class="h-11 px-3 shrink-0 rounded-2xl bg-panel hairline flex items-center justify-center text-sub hover:text-ink hover:bg-panel2 transition text-xs font-medium nums tracking-wider uppercase"
-                aria-label={t("language")}
-                title={t("language")}
-            >
-                {i18n.lang === "en" ? "EN" : "ΕΛ"}
-            </button>
+            <Tooltip.Root>
+                <Tooltip.Trigger>
+                    {#snippet child({ props })}
+                        <Button
+                            {...props}
+                            variant="outline"
+                            size="icon"
+                            class="pressable h-11 w-auto rounded-md px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground nums"
+                            onclick={toggleLang}
+                            aria-label={t("language")}
+                        >
+                            <LanguagesIcon class="size-4" />
+                            <span class="ml-1">{i18n.lang === "en" ? "EN" : "ΕΛ"}</span>
+                        </Button>
+                    {/snippet}
+                </Tooltip.Trigger>
+                <Tooltip.Content>{t("language")}</Tooltip.Content>
+            </Tooltip.Root>
             {#if data}
-                <button
-                    type="button"
-                    onclick={share}
-                    class="h-11 w-11 shrink-0 rounded-2xl hairline flex items-center justify-center transition {copied
-                        ? 'bg-accent/15 text-accent'
-                        : 'bg-panel text-sub hover:text-ink hover:bg-panel2'}"
-                    aria-label="Share"
-                    title="Share"
-                >
-                    <Icon name={copied ? "check" : "share"} size={18} />
-                </button>
-                <button
-                    type="button"
-                    onclick={refresh}
-                    disabled={refreshing}
-                    class="hidden sm:flex h-11 w-11 shrink-0 rounded-2xl bg-panel hairline items-center justify-center text-sub hover:text-ink hover:bg-panel2 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    aria-label={t("refresh")}
-                    title={t("refresh")}
-                >
-                    <Icon
-                        name="refresh"
-                        size={18}
-                        class={refreshing ? "animate-spin" : ""}
-                    />
-                </button>
+                <Tooltip.Root>
+                    <Tooltip.Trigger>
+                        {#snippet child({ props })}
+                            <Button
+                                {...props}
+                                variant={copied ? "default" : "outline"}
+                                size="icon"
+                                class="pressable h-11 w-11 rounded-md {copied
+                                    ? 'border-accent/30 bg-accent/20 text-accent hover:bg-accent/25'
+                                    : 'text-muted-foreground'}"
+                                onclick={share}
+                                aria-label="Share"
+                            >
+                                {#if copied}
+                                    <CheckIcon class="size-4.5" />
+                                {:else}
+                                    <ShareIcon class="size-4.5" />
+                                {/if}
+                            </Button>
+                        {/snippet}
+                    </Tooltip.Trigger>
+                    <Tooltip.Content>Share</Tooltip.Content>
+                </Tooltip.Root>
+                <Tooltip.Root>
+                    <Tooltip.Trigger>
+                        {#snippet child({ props })}
+                            <Button
+                                {...props}
+                                variant="outline"
+                                size="icon"
+                                class="pressable hidden h-11 w-11 rounded-md text-muted-foreground sm:inline-flex"
+                                onclick={refresh}
+                                disabled={refreshing}
+                                aria-label={t("refresh")}
+                            >
+                                <RefreshIcon
+                                    class="size-4.5 {refreshing
+                                        ? 'animate-spin'
+                                        : ''}"
+                                />
+                            </Button>
+                        {/snippet}
+                    </Tooltip.Trigger>
+                    <Tooltip.Content>{t("refresh")}</Tooltip.Content>
+                </Tooltip.Root>
             {/if}
         </div>
     </header>
 
     {#if loading && !data}
-        <div class="px-5 py-20 flex flex-col items-center text-sub gap-3">
-            <div class="animate-pulse text-accent">
-                <Icon name="sun" size={42} />
+        <div class="px-5 py-10 lg:grid lg:grid-cols-[minmax(360px,420px)_minmax(0,1fr)] lg:gap-4">
+            <div class="space-y-4">
+                <div class="flex items-center gap-3 text-muted-foreground">
+                    <SunIcon class="size-10 text-accent animate-pulse" />
+                    <span class="text-sm">{t("loading")}</span>
+                </div>
+                <div class="space-y-3">
+                    <Skeleton class="h-52 w-full rounded-lg" />
+                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2">
+                        <Skeleton class="h-16 rounded-lg" />
+                        <Skeleton class="h-16 rounded-lg" />
+                        <Skeleton class="h-16 rounded-lg" />
+                        <Skeleton class="h-16 rounded-lg" />
+                    </div>
+                </div>
             </div>
-            <div class="text-sm">{t("loading")}</div>
+            <div class="mt-3 space-y-3 lg:mt-0">
+                <Skeleton class="h-72 w-full rounded-lg" />
+                <Skeleton class="hidden h-40 w-full rounded-lg lg:block" />
+            </div>
         </div>
     {:else if error && !data}
-        <div class="px-5 py-10 text-center">
-            <div class="text-warn text-sm mb-3">{error}</div>
-            <button
-                class="rounded-xl bg-panel hairline px-4 py-2 text-sm"
-                onclick={locate}>{t("try_again")}</button
-            >
+        <div class="px-5 py-10">
+            <Alert.Root variant="destructive">
+                <Alert.Title>{t("fetch_failed")}</Alert.Title>
+                <Alert.Description>{error}</Alert.Description>
+                <Alert.Action>
+                    <Button class="pressable" variant="outline" size="sm" onclick={locate}>
+                        {t("try_again")}
+                    </Button>
+                </Alert.Action>
+            </Alert.Root>
         </div>
     {:else if data}
         {#if error}
-            <div
-                class="mx-5 mb-3 rounded-lg bg-panel hairline px-3 py-2 text-xs text-warn"
-            >
-                {error}
+            <div class="mx-5 mb-3">
+                <Alert.Root variant="default" class="weather-card border-0 text-warn">
+                    <Alert.Description class="text-warn/90 text-xs">
+                        {error}
+                    </Alert.Description>
+                </Alert.Root>
             </div>
         {/if}
-        <Current {data} {place} />
-        <Hourly {data} />
-        <Daily {data} />
-        <footer class="px-5 pb-8 text-center text-[11px] text-mute">
+        <div
+            class="mt-1 lg:grid lg:grid-cols-[minmax(340px,420px)_minmax(0,1fr)] lg:gap-4 lg:px-5 lg:flex-1 lg:min-h-0"
+        >
+            <div class="lg:h-full lg:min-h-0 lg:space-y-4">
+                <Current {data} {place} />
+            </div>
+            <div class="lg:h-full lg:min-h-0 lg:min-w-0">
+                <Daily {data} />
+            </div>
+        </div>
+        <footer
+            class="px-5 pb-8 text-center text-[11px] text-muted-foreground/70 lg:pt-2"
+        >
             {#if updated}{t("updated")}
                 {updated.toLocaleTimeString(locale(), {
                     hour: "2-digit",
@@ -387,7 +456,7 @@
             {/if}
             {t("powered_by")}
             <a
-                class="hover:text-sub"
+                class="hover:text-muted-foreground underline-offset-2 hover:underline"
                 href="https://open-meteo.com"
                 target="_blank"
                 rel="noopener noreferrer">Open-Meteo</a

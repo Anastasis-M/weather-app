@@ -1,5 +1,9 @@
 <script lang="ts">
-    import Icon from "./Icon.svelte";
+    import SearchIcon from "@lucide/svelte/icons/search";
+    import MapPinIcon from "@lucide/svelte/icons/map-pin";
+    import LoaderIcon from "@lucide/svelte/icons/loader-2";
+    import * as Command from "$lib/components/ui/command";
+    import * as InputGroup from "$lib/components/ui/input-group";
     import { searchPlaces, type Location, type Place } from "$lib/weather";
     import { i18n, t } from "$lib/i18n.svelte";
 
@@ -14,13 +18,21 @@
     let open = $state(false);
     let loading = $state(false);
     let active = $state(-1);
+    let selectedValue = $state("");
     let timer: ReturnType<typeof setTimeout> | undefined;
     let container: HTMLDivElement;
+    let inputEl: HTMLInputElement | null = $state(null);
+
+    function resultValue(r: Place) {
+        return `${r.name}-${r.latitude}-${r.longitude}`;
+    }
 
     function run(value: string) {
         clearTimeout(timer);
         if (!value || value.trim().length < 2) {
             results = [];
+            active = -1;
+            selectedValue = "";
             return;
         }
         loading = true;
@@ -29,6 +41,7 @@
             try {
                 results = await searchPlaces(value, lang);
                 active = results.length ? 0 : -1;
+                selectedValue = results.length ? resultValue(results[0]) : "";
             } finally {
                 loading = false;
             }
@@ -43,6 +56,7 @@
         open = false;
         q = "";
         results = [];
+        inputEl?.blur();
         onSelect?.({
             name: [r.name, r.admin1, r.country_code].filter(Boolean).join(", "),
             shortName: r.name,
@@ -57,30 +71,33 @@
         if (e.key === "ArrowDown") {
             e.preventDefault();
             active = (active + 1) % results.length;
+            selectedValue = resultValue(results[active]);
         } else if (e.key === "ArrowUp") {
             e.preventDefault();
             active = (active - 1 + results.length) % results.length;
+            selectedValue = resultValue(results[active]);
         } else if (e.key === "Enter" && active >= 0) {
             e.preventDefault();
             pick(results[active]);
         } else if (e.key === "Escape") {
             open = false;
+            inputEl?.blur();
         }
     }
 </script>
 
-<div class="w-full" bind:this={container}>
-    <div
-        class="flex items-center gap-2 rounded-2xl bg-panel hairline px-3 h-11 overflow-hidden"
-    >
-        <Icon name="search" size={18} class="text-sub shrink-0" />
-        <input
-            type="search"
+<div class="relative w-full" bind:this={container}>
+    <InputGroup.Root class="h-11 bg-card/40 pl-0.5 pr-0.5 shadow-xs">
+        <InputGroup.Addon class="pl-2">
+        <SearchIcon class="size-4 shrink-0 text-muted-foreground" />
+        </InputGroup.Addon>
+        <InputGroup.Input
+            bind:ref={inputEl}
             bind:value={q}
             onfocus={() => (open = true)}
             onkeydown={onKey}
+            type="search"
             placeholder={t("search_placeholder")}
-            class="flex-1 min-w-0 bg-transparent outline-none text-[15px] placeholder:text-mute"
             autocomplete="off"
             enterkeyhint="search"
             role="combobox"
@@ -90,50 +107,70 @@
             aria-activedescendant={active >= 0
                 ? `search-result-${active}`
                 : undefined}
+            class="h-10 px-0 text-[15px]"
         />
-        <button
-            type="button"
+        <InputGroup.Addon align="inline-end" class="py-0 pr-0.5">
+        <InputGroup.Button
+            variant="ghost"
+            size="icon-sm"
+            class="pressable size-10 text-muted-foreground"
             onclick={() => onLocate?.()}
-            class="shrink-0 p-1.5 rounded-lg text-sub hover:text-ink hover:bg-panel2 transition"
             aria-label={t("use_location")}
             title={t("use_location")}
         >
-            <Icon name="pin" size={18} />
-        </button>
-    </div>
+            <MapPinIcon />
+        </InputGroup.Button>
+        </InputGroup.Addon>
+    </InputGroup.Root>
 
     {#if open && (results.length > 0 || loading)}
-        <ul
+        <Command.Root
             id="search-listbox"
-            class="absolute left-0 right-0 top-full mt-2 z-30 rounded-2xl bg-panel hairline overflow-hidden max-h-80 overflow-y-auto"
-            role="listbox"
-            aria-label={t("search_placeholder")}
+            shouldFilter={false}
+            loop
+            bind:value={selectedValue}
+            onValueChange={(value) => {
+                selectedValue = value;
+                const next = results.findIndex((r) => resultValue(r) === value);
+                if (next >= 0) active = next;
+            }}
+            class="absolute left-0 right-0 top-full z-30 mt-2 h-auto rounded-md bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10"
         >
-            {#if loading && results.length === 0}
-                <li class="px-3 py-3 text-sm text-sub">{t("searching")}</li>
-            {/if}
-            {#each results as r, i}
-                <li>
-                    <button
-                        id="search-result-{i}"
-                        type="button"
-                        class="w-full text-left px-3 py-2.5 flex items-baseline gap-2 hover:bg-panel2 transition {i ===
-                        active
-                            ? 'bg-panel2'
-                            : ''}"
-                        onclick={() => pick(r)}
-                        onmouseenter={() => (active = i)}
-                        role="option"
-                        aria-selected={i === active}
+            <Command.List class="max-h-80">
+                {#if loading && results.length === 0}
+                    <Command.Loading
+                        class="flex items-center gap-2 px-3 py-3 text-sm text-muted-foreground"
                     >
-                        <span class="text-[15px]">{r.name}</span>
-                        <span class="text-xs text-sub truncate">
+                        <LoaderIcon class="size-4 animate-spin" />
+                        {t("searching")}
+                    </Command.Loading>
+                {/if}
+                {#each results as r, i}
+                    <Command.Item
+                        id="search-result-{i}"
+                        value={resultValue(r)}
+                        onSelect={() => pick(r)}
+                        forceMount
+                        class="pressable min-h-10 cursor-pointer gap-3 px-3 py-2.5 {i ===
+                        active
+                            ? 'bg-muted text-foreground'
+                            : 'hover:bg-muted/60'}"
+                        onmouseenter={() => {
+                            active = i;
+                            selectedValue = resultValue(r);
+                        }}
+                    >
+                        <MapPinIcon class="size-3.5 text-muted-foreground" />
+                        <span class="min-w-0 flex-1 truncate text-[15px]">{r.name}</span>
+                        <Command.Shortcut
+                            class="max-w-[42%] truncate text-xs tracking-normal"
+                        >
                             {[r.admin1, r.country].filter(Boolean).join(", ")}
-                        </span>
-                    </button>
-                </li>
-            {/each}
-        </ul>
+                        </Command.Shortcut>
+                    </Command.Item>
+                {/each}
+            </Command.List>
+        </Command.Root>
     {/if}
 </div>
 

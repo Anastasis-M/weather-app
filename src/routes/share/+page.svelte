@@ -51,7 +51,7 @@
 </svelte:head>
 
 <main
-    class="min-h-screen bg-bg text-ink flex items-center justify-center text-sm text-sub"
+    class="min-h-screen bg-background text-foreground flex items-center justify-center text-sm text-muted-foreground"
     aria-live="polite"
 >
     {#if data.valid}
