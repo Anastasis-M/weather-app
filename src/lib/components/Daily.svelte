@@ -89,10 +89,10 @@
     }
 </script>
 
-<section class="px-5 pb-8 lg:px-0 lg:pb-0 lg:h-full lg:min-h-0">
+<section class="px-5 pb-8 lg:px-0 lg:pb-0 lg:flex lg:min-h-0 lg:flex-col">
     <Card.Root
         size="sm"
-        class="weather-card gap-0 rounded-lg py-0 lg:h-full lg:min-h-0 lg:overflow-hidden"
+        class="weather-card gap-0 rounded-lg py-0 lg:min-h-0 lg:overflow-hidden"
     >
         <Card.Header class="border-b border-border/70 px-3 pb-2.5! lg:shrink-0">
             <Card.Title class="section-title">

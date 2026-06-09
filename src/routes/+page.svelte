@@ -441,7 +441,7 @@
             <div class="lg:h-full lg:min-h-0 lg:space-y-4">
                 <Current {data} {place} />
             </div>
-            <div class="lg:h-full lg:min-h-0 lg:min-w-0">
+            <div class="lg:flex lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-col">
                 <Daily {data} />
             </div>
         </div>
