@@ -1,5 +1,6 @@
 <script lang="ts">
     import "../app.css";
+    import "@fontsource-variable/inter";
     import { onMount } from "svelte";
     import { updated } from "$app/state";
     import { Toaster } from "$lib/components/ui/sonner";
