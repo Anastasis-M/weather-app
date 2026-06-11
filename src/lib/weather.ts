@@ -59,6 +59,35 @@ const AIR_QUALITY_CURRENT = [
   "pm2_5",
 ].join(",");
 
+const WEATHER_ERROR = "weather_unavailable";
+const WEATHER_TIMEOUT_MS = 10_000;
+
+async function fetchWeatherResponse(url: URL): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), WEATHER_TIMEOUT_MS);
+
+  try {
+    return await fetch(url, {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+  } catch {
+    throw new Error(WEATHER_ERROR);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function readWeatherJson(response: Response): Promise<WeatherData> {
+  if (!response.ok) throw new Error(WEATHER_ERROR);
+
+  try {
+    return await response.json();
+  } catch {
+    throw new Error(WEATHER_ERROR);
+  }
+}
+
 async function fetchAirQuality({
   latitude,
   longitude,
@@ -72,9 +101,11 @@ async function fetchAirQuality({
   u.searchParams.set("current", AIR_QUALITY_CURRENT);
   u.searchParams.set("timezone", "auto");
   u.searchParams.set("forecast_days", "1");
-  const r = await fetch(u, { cache: "no-store" });
-  if (!r.ok) return null;
-  return r.json();
+  try {
+    return await readWeatherJson(await fetchWeatherResponse(u));
+  } catch {
+    return null;
+  }
 }
 
 export async function fetchWeather({
@@ -96,11 +127,10 @@ export async function fetchWeather({
   u.searchParams.set("temperature_unit", "celsius");
   u.searchParams.set("precipitation_unit", "mm");
   const [r, airQuality] = await Promise.all([
-    fetch(u, { cache: "no-store" }),
+    fetchWeatherResponse(u),
     fetchAirQuality({ latitude, longitude }).catch(() => null),
   ]);
-  if (!r.ok) throw new Error("Weather request failed");
-  const weather = await r.json();
+  const weather = await readWeatherJson(r);
   return { ...weather, airQuality };
 }
 

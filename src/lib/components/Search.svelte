@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { onMount } from "svelte";
     import SearchIcon from "@lucide/svelte/icons/search";
     import MapPinIcon from "@lucide/svelte/icons/map-pin";
     import LoaderIcon from "@lucide/svelte/icons/loader-2";
@@ -20,8 +21,14 @@
     let active = $state(-1);
     let selectedValue = $state("");
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let searchSeq = 0;
     let container: HTMLDivElement;
     let inputEl: HTMLInputElement | null = $state(null);
+    let dropdownLeft = $state(0);
+    let dropdownWidth = $state(0);
+    let dropdownStyle = $derived(
+        `left:${dropdownLeft}px;width:${dropdownWidth}px;`,
+    );
 
     function resultValue(r: Place) {
         return `${r.name}-${r.latitude}-${r.longitude}`;
@@ -29,27 +36,65 @@
 
     function run(value: string) {
         clearTimeout(timer);
+        const seq = ++searchSeq;
         if (!value || value.trim().length < 2) {
             results = [];
             active = -1;
             selectedValue = "";
+            loading = false;
             return;
         }
         loading = true;
         const lang = i18n.lang;
         timer = setTimeout(async () => {
             try {
-                results = await searchPlaces(value, lang);
+                const next = await searchPlaces(value, lang);
+                if (seq !== searchSeq) return;
+                results = next;
                 active = results.length ? 0 : -1;
                 selectedValue = results.length ? resultValue(results[0]) : "";
             } finally {
-                loading = false;
+                if (seq === searchSeq) loading = false;
             }
         }, 220);
     }
 
     $effect(() => {
         run(q);
+    });
+
+    function updateDropdownMetrics() {
+        if (!container || typeof window === "undefined") return;
+
+        const pageMaxWidth = 1152;
+        const contentInset = 20;
+        const pageWidth = Math.min(window.innerWidth, pageMaxWidth);
+        const contentLeft =
+            Math.max(0, (window.innerWidth - pageWidth) / 2) + contentInset;
+        const contentWidth = Math.max(0, pageWidth - contentInset * 2);
+        const rect = container.getBoundingClientRect();
+
+        dropdownLeft = Math.round(contentLeft - rect.left);
+        dropdownWidth = Math.round(contentWidth);
+    }
+
+    $effect(() => {
+        if (!open) return;
+        q;
+        loading;
+        results.length;
+        requestAnimationFrame(updateDropdownMetrics);
+    });
+
+    onMount(() => {
+        const update = () => updateDropdownMetrics();
+        window.addEventListener("resize", update);
+        window.addEventListener("scroll", update, true);
+        return () => {
+            window.removeEventListener("resize", update);
+            window.removeEventListener("scroll", update, true);
+            clearTimeout(timer);
+        };
     });
 
     function pick(r: Place) {
@@ -89,7 +134,7 @@
 <div class="relative w-full" bind:this={container}>
     <InputGroup.Root class="h-11 bg-card/40 pl-0.5 pr-0.5 shadow-xs">
         <InputGroup.Addon class="pl-2">
-        <SearchIcon class="size-4 shrink-0 text-muted-foreground" />
+            <SearchIcon class="size-4 shrink-0 text-muted-foreground" />
         </InputGroup.Addon>
         <InputGroup.Input
             bind:ref={inputEl}
@@ -110,16 +155,16 @@
             class="h-10 px-0 text-[15px]"
         />
         <InputGroup.Addon align="inline-end" class="py-0 pr-0.5">
-        <InputGroup.Button
-            variant="ghost"
-            size="icon-sm"
-            class="pressable size-10 text-muted-foreground"
-            onclick={() => onLocate?.()}
-            aria-label={t("use_location")}
-            title={t("use_location")}
-        >
-            <MapPinIcon />
-        </InputGroup.Button>
+            <InputGroup.Button
+                variant="ghost"
+                size="icon-sm"
+                class="pressable size-10 text-muted-foreground"
+                onclick={() => onLocate?.()}
+                aria-label={t("use_location")}
+                title={t("use_location")}
+            >
+                <MapPinIcon />
+            </InputGroup.Button>
         </InputGroup.Addon>
     </InputGroup.Root>
 
@@ -134,7 +179,8 @@
                 const next = results.findIndex((r) => resultValue(r) === value);
                 if (next >= 0) active = next;
             }}
-            class="absolute left-0 right-0 top-full z-30 mt-2 h-auto rounded-md bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10"
+            style={dropdownStyle}
+            class="absolute top-full z-30 mt-2 h-auto rounded-md bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10"
         >
             <Command.List class="max-h-80">
                 {#if loading && results.length === 0}
@@ -161,7 +207,9 @@
                         }}
                     >
                         <MapPinIcon class="size-3.5 text-muted-foreground" />
-                        <span class="min-w-0 flex-1 truncate text-[15px]">{r.name}</span>
+                        <span class="min-w-0 flex-1 truncate text-[15px]"
+                            >{r.name}</span
+                        >
                         <Command.Shortcut
                             class="max-w-[42%] truncate text-xs tracking-normal"
                         >

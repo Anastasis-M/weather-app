@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { replaceState } from "$app/navigation";
     import { toast } from "svelte-sonner";
     import LanguagesIcon from "@lucide/svelte/icons/languages";
     import RefreshIcon from "@lucide/svelte/icons/refresh-cw";
@@ -7,6 +8,7 @@
     import CheckIcon from "@lucide/svelte/icons/check";
     import ArrowUpIcon from "@lucide/svelte/icons/arrow-up";
     import SunIcon from "@lucide/svelte/icons/sun";
+    import LoaderIcon from "@lucide/svelte/icons/loader-2";
     import Search from "$lib/components/Search.svelte";
     import Current from "$lib/components/Current.svelte";
     import Daily from "$lib/components/Daily.svelte";
@@ -31,9 +33,16 @@
     let place = $state<Location | null>(null);
     let data = $state<WeatherData | null>(null);
     let loading = $state(true);
+    let loadingLocation = $state<Location | null>(null);
     let refreshing = $state(false);
     let error = $state("");
     let updated = $state<Date | null>(null);
+    let loadRequestId = 0;
+    let loadingMessage = $derived(
+        loadingLocation
+            ? `${t("loading_location")} ${loadingLocation.shortName}`
+            : t("loading"),
+    );
 
     // ── Share ──────────────────────────────────────────────────────
     let copied = $state(false);
@@ -50,7 +59,10 @@
 
         if (navigator.canShare?.({ url }) && navigator.share) {
             try {
-                await navigator.share({ title: `Weather in ${place.shortName}`, url });
+                await navigator.share({
+                    title: `Weather in ${place.shortName}`,
+                    url,
+                });
                 return;
             } catch (e) {
                 if ((e as Error).name === "AbortError") return;
@@ -60,7 +72,9 @@
         await navigator.clipboard.writeText(url);
         clearTimeout(copiedTimer);
         copied = true;
-        copiedTimer = setTimeout(() => { copied = false; }, 2000);
+        copiedTimer = setTimeout(() => {
+            copied = false;
+        }, 2000);
         toast.success(t("copied") ?? "Link copied");
     }
 
@@ -149,11 +163,20 @@
         return true;
     }
 
+    function fetchErrorMessage(e: any, fallback: string): string {
+        return e?.message === "weather_unavailable"
+            ? t("weather_unavailable")
+            : e?.message || fallback;
+    }
+
     async function load(loc: Location) {
+        const requestId = ++loadRequestId;
         loading = true;
+        loadingLocation = loc;
         error = "";
         try {
             const w = await fetchWeather(loc);
+            if (requestId !== loadRequestId) return;
             data = w;
             place = loc;
             updated = new Date();
@@ -166,35 +189,48 @@
                 lon: String(loc.longitude),
                 name: loc.shortName,
             });
-            history.replaceState({}, "", `?${p}`);
+            replaceState(`?${p}`, {});
         } catch (e: any) {
+            if (requestId !== loadRequestId) return;
             // Offline / network blip — render the last saved forecast so the
             // PWA isn't a blank page. We still surface the state via a banner.
-            if (hydrateFromCache(loc)) {
-                error = t("offline_cached");
+            if (data) {
+                error = navigator.onLine
+                    ? fetchErrorMessage(e, t("fetch_failed"))
+                    : t("offline_cached");
+            } else if (hydrateFromCache(loc)) {
+                error = navigator.onLine
+                    ? fetchErrorMessage(e, t("fetch_failed"))
+                    : t("offline_cached");
                 armInterval();
             } else {
-                error = e?.message || t("fetch_failed");
+                error = fetchErrorMessage(e, t("fetch_failed"));
             }
         } finally {
-            loading = false;
+            if (requestId === loadRequestId) {
+                loading = false;
+                loadingLocation = null;
+            }
         }
     }
 
     async function refresh() {
-        if (!place || refreshing) return;
+        if (!place || refreshing || loading) return;
+        const requestId = loadRequestId;
         refreshing = true;
         error = "";
         try {
             const w = await fetchWeather(place);
+            if (requestId !== loadRequestId) return;
             data = w;
             updated = new Date();
             saveWeather(place, w);
             armInterval(); // reset the 1-hour timer
         } catch (e: any) {
+            if (requestId !== loadRequestId) return;
             // Keep showing whatever we have; only flag the failure.
             error = navigator.onLine
-                ? e?.message || t("refresh_failed")
+                ? fetchErrorMessage(e, t("refresh_failed"))
                 : t("offline_cached");
         } finally {
             refreshing = false;
@@ -203,11 +239,15 @@
     }
 
     async function locate() {
+        const requestId = ++loadRequestId;
         loading = true;
+        loadingLocation = null;
         error = "";
         try {
             const pos = await getCurrentPosition();
+            if (requestId !== loadRequestId) return;
             const p = await reverseGeocode(pos, i18n.lang);
+            if (requestId !== loadRequestId) return;
             const loc: Location = {
                 name: p
                     ? [p.name, p.admin1, p.country_code]
@@ -221,11 +261,13 @@
             };
             await load(loc);
         } catch (e: any) {
+            if (requestId !== loadRequestId) return;
             error =
                 e?.code === 1
                     ? t("permission_denied")
                     : e?.message || t("could_not_get_location");
             loading = false;
+            loadingLocation = null;
         }
     }
 
@@ -238,7 +280,12 @@
         const pLon = parseFloat(params.get("lon") ?? "");
         const pName = params.get("name") ?? "";
         if (pLat && pLon && pName) {
-            await load({ name: pName, shortName: pName, latitude: pLat, longitude: pLon });
+            await load({
+                name: pName,
+                shortName: pName,
+                latitude: pLat,
+                longitude: pLon,
+            });
             return;
         }
 
@@ -293,7 +340,9 @@
     });
 </script>
 
-<main class="safe-pt safe-pb mx-auto min-h-screen w-full max-w-6xl lg:flex lg:h-screen lg:min-h-0 lg:flex-col lg:overflow-hidden">
+<main
+    class="safe-pt safe-pb mx-auto min-h-screen w-full max-w-6xl lg:flex lg:h-screen lg:min-h-0 lg:flex-col lg:overflow-hidden"
+>
     <!-- Pull-to-refresh indicator -->
     <div
         class="flex items-end justify-center overflow-hidden"
@@ -318,7 +367,9 @@
         </Badge>
     </div>
 
-    <header class="sticky top-0 z-20 bg-background/85 px-5 pt-4 pb-4 backdrop-blur-md lg:pt-5 lg:pb-5">
+    <header
+        class="sticky top-0 z-20 bg-background/85 px-5 pt-4 pb-2 backdrop-blur-md mb-2"
+    >
         <div class="relative flex items-center gap-2">
             <div class="flex-1 min-w-0">
                 <Search onSelect={load} onLocate={locate} />
@@ -335,7 +386,9 @@
                             aria-label={t("language")}
                         >
                             <LanguagesIcon class="size-4" />
-                            <span class="ml-1">{i18n.lang === "en" ? "EN" : "ΕΛ"}</span>
+                            <span class="ml-1"
+                                >{i18n.lang === "en" ? "EN" : "ΕΛ"}</span
+                            >
                         </Button>
                     {/snippet}
                 </Tooltip.Trigger>
@@ -392,7 +445,9 @@
     </header>
 
     {#if loading && !data}
-        <div class="px-5 py-10 lg:grid lg:grid-cols-[minmax(360px,420px)_minmax(0,1fr)] lg:gap-4">
+        <div
+            class="px-5 py-10 lg:grid lg:grid-cols-[minmax(360px,420px)_minmax(0,1fr)] lg:gap-4"
+        >
             <div class="space-y-4">
                 <div class="flex items-center gap-3 text-muted-foreground">
                     <SunIcon class="size-10 text-accent animate-pulse" />
@@ -400,7 +455,9 @@
                 </div>
                 <div class="space-y-3">
                     <Skeleton class="h-52 w-full rounded-lg" />
-                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2">
+                    <div
+                        class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2"
+                    >
                         <Skeleton class="h-16 rounded-lg" />
                         <Skeleton class="h-16 rounded-lg" />
                         <Skeleton class="h-16 rounded-lg" />
@@ -419,16 +476,36 @@
                 <Alert.Title>{t("fetch_failed")}</Alert.Title>
                 <Alert.Description>{error}</Alert.Description>
                 <Alert.Action>
-                    <Button class="pressable" variant="outline" size="sm" onclick={locate}>
+                    <Button
+                        class="pressable"
+                        variant="outline"
+                        size="sm"
+                        onclick={locate}
+                    >
                         {t("try_again")}
                     </Button>
                 </Alert.Action>
             </Alert.Root>
         </div>
     {:else if data}
+        {#if loading}
+            <div class="mx-5 mb-3" role="status" aria-live="polite">
+                <div
+                    class="weather-card flex min-h-11 items-center gap-2 rounded-md bg-card px-3 py-2 text-sm text-muted-foreground"
+                >
+                    <LoaderIcon
+                        class="size-4 shrink-0 animate-spin text-accent"
+                    />
+                    <span class="min-w-0 truncate">{loadingMessage}</span>
+                </div>
+            </div>
+        {/if}
         {#if error}
             <div class="mx-5 mb-3">
-                <Alert.Root variant="default" class="weather-card border-0 text-warn">
+                <Alert.Root
+                    variant="default"
+                    class="weather-card border-0 text-warn"
+                >
                     <Alert.Description class="text-warn/90 text-xs">
                         {error}
                     </Alert.Description>
