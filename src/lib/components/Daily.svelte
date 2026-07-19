@@ -4,6 +4,7 @@
     import NavigationIcon from "@lucide/svelte/icons/navigation";
     import CloudRainIcon from "@lucide/svelte/icons/cloud-rain";
     import * as Card from "$lib/components/ui/card";
+    import { Badge } from "$lib/components/ui/badge";
     import * as Collapsible from "$lib/components/ui/collapsible";
     import { Separator } from "$lib/components/ui/separator";
     import { ScrollArea } from "$lib/components/ui/scroll-area";
@@ -238,8 +239,9 @@
                     </div>
                     <div class="flex items-center justify-end gap-1.5 pl-0.5">
                         {#if hasDayDir}
-                            <span
-                                class="hidden items-center gap-1 whitespace-nowrap rounded-md bg-muted/55 px-1.5 py-0.5 text-[11px] text-muted-foreground nums min-[460px]:flex"
+                            <Badge
+                                variant="secondary"
+                                class="nums hidden text-muted-foreground min-[460px]:inline-flex"
                             >
                                 {dayBf} Bf
                                 <span
@@ -250,15 +252,15 @@
                                 >
                                     <NavigationIcon class="size-3" />
                                 </span>
-                            </span>
+                            </Badge>
                         {/if}
                         {#if sum >= 0.2 || pop >= 35}
-                            <span
-                                class="hidden items-center gap-0.5 whitespace-nowrap rounded-md bg-rain/10 px-1.5 py-0.5 text-[11px] text-rain nums min-[460px]:flex"
+                            <Badge
+                                class="nums hidden bg-rain/10 text-rain min-[460px]:inline-flex"
                             >
-                                <CloudRainIcon class="size-3" />
+                                <CloudRainIcon />
                                 {rainLabel(sum, pop)}
-                            </span>
+                            </Badge>
                         {/if}
                         <ChevronDownIcon
                             class="size-4 shrink-0 text-muted-foreground/60 transition-transform duration-200 {isOpen
@@ -271,8 +273,9 @@
                     <div
                         class="col-span-full flex min-w-0 items-center gap-1.5 min-[460px]:hidden"
                     >
-                        <span
-                            class="flex items-center gap-1 whitespace-nowrap rounded-md bg-muted/55 px-1.5 py-0.5 text-[11px] text-muted-foreground nums"
+                        <Badge
+                            variant="secondary"
+                            class="nums text-muted-foreground"
                         >
                             {dayBf} Bf
                             {#if hasDayDir}
@@ -284,18 +287,16 @@
                                     <NavigationIcon class="size-3" />
                                 </span>
                             {/if}
-                        </span>
+                        </Badge>
                         <span
                             class="truncate text-[11px] text-muted-foreground/70"
                             >{t("bf." + dayBf)}</span
                         >
                         {#if sum >= 0.2 || pop >= 35}
-                            <span
-                                class="ml-auto flex items-center gap-0.5 whitespace-nowrap rounded-md bg-rain/10 px-1.5 py-0.5 text-[11px] text-rain nums"
-                            >
-                                <CloudRainIcon class="size-3" />
+                            <Badge class="nums ml-auto bg-rain/10 text-rain">
+                                <CloudRainIcon />
                                 {rainLabel(sum, pop)}
-                            </span>
+                            </Badge>
                         {/if}
                     </div>
                 </Collapsible.Trigger>

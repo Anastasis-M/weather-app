@@ -448,12 +448,12 @@
         <div
             class="px-5 py-10 lg:grid lg:grid-cols-[minmax(360px,420px)_minmax(0,1fr)] lg:gap-4"
         >
-            <div class="space-y-4">
+            <div class="flex flex-col gap-4">
                 <div class="flex items-center gap-3 text-muted-foreground">
                     <SunIcon class="size-10 text-accent animate-pulse" />
                     <span class="text-sm">{t("loading")}</span>
                 </div>
-                <div class="space-y-3">
+                <div class="flex flex-col gap-3">
                     <Skeleton class="h-52 w-full rounded-lg" />
                     <div
                         class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2"
@@ -465,7 +465,7 @@
                     </div>
                 </div>
             </div>
-            <div class="mt-3 space-y-3 lg:mt-0">
+            <div class="mt-3 flex flex-col gap-3 lg:mt-0">
                 <Skeleton class="h-72 w-full rounded-lg" />
                 <Skeleton class="hidden h-40 w-full rounded-lg lg:block" />
             </div>
@@ -515,7 +515,7 @@
         <div
             class="mt-1 lg:grid lg:grid-cols-[minmax(340px,420px)_minmax(0,1fr)] lg:gap-4 lg:px-5 lg:flex-1 lg:min-h-0"
         >
-            <div class="lg:h-full lg:min-h-0 lg:space-y-4">
+            <div class="lg:h-full lg:min-h-0">
                 <Current {data} {place} />
             </div>
             <div class="lg:flex lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-col">

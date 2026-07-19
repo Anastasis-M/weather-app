@@ -108,9 +108,9 @@
     <Card.Header class="px-4 pt-3.5 pb-0 sm:px-5">
       <div class="flex flex-wrap items-start justify-between gap-2.5">
         <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-1.5">
-            <MapPinIcon class="size-4 shrink-0 text-muted-foreground" />
-            <Card.Title class="truncate text-balance text-xl font-semibold leading-tight text-foreground sm:text-2xl lg:text-2xl">
+          <div class="flex items-center gap-2">
+            <MapPinIcon class="size-5 shrink-0 text-accent" />
+            <Card.Title class="truncate text-2xl! font-bold leading-tight tracking-tight text-foreground sm:text-3xl!">
               {placeTitle}
             </Card.Title>
           </div>
