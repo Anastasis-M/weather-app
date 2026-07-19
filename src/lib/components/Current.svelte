@@ -9,7 +9,6 @@
   import SunsetIcon from '@lucide/svelte/icons/sunset';
   import GaugeIcon from '@lucide/svelte/icons/gauge';
   import * as Card from '$lib/components/ui/card';
-  import { Badge } from '$lib/components/ui/badge';
   import { describe, iconColor } from '$lib/wmo';
   import { fmtTemp, fmtTime, fmtMm, compassCode, uvLevel, kmhToBeaufort } from '$lib/format';
   import { t, locale } from '$lib/i18n.svelte';
@@ -108,9 +107,9 @@
     <Card.Header class="px-4 pt-3.5 pb-0 sm:px-5">
       <div class="flex flex-wrap items-start justify-between gap-2.5">
         <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-2">
-            <MapPinIcon class="size-5 shrink-0 text-accent" />
-            <Card.Title class="truncate text-2xl! font-bold leading-tight tracking-tight text-foreground sm:text-3xl!">
+          <div class="flex items-start gap-2">
+            <MapPinIcon class="mt-1 size-5 shrink-0 text-accent sm:mt-1.5" />
+            <Card.Title class="min-w-0 text-balance text-2xl! font-bold leading-tight tracking-tight text-foreground sm:text-3xl!">
               {placeTitle}
             </Card.Title>
           </div>
@@ -118,25 +117,11 @@
             {placeDetail || t(w.labelKey)}
           </Card.Description>
         </div>
-        <div class="flex max-w-full flex-wrap justify-end gap-1.5">
-          <Badge variant="outline" class="h-6 rounded-md px-2 text-[11px] sm:text-xs">
-            <WindIcon class="size-3.5" />
-            <span class="nums">{bf} Bf</span>
-            {#if dir}<span class="text-muted-foreground">{t('c.' + dir)}</span>{/if}
-          </Badge>
-          {#if air.value != null}
-            <Badge variant="outline" class="h-6 rounded-md px-2 text-[11px] sm:text-xs">
-              <GaugeIcon class="size-3.5 {air.tone}" />
-              <span>AQI</span>
-              <span class="nums {air.tone}">{air.value}</span>
-            </Badge>
-          {/if}
-        </div>
       </div>
     </Card.Header>
 
     <Card.Content class="px-4 pb-3.5 pt-2 sm:px-5">
-      <div class="flex items-end justify-between gap-4">
+      <div class="flex items-center justify-between gap-4">
         <div class="min-w-0">
           <div class="nums text-[62px] font-light leading-none tracking-tight sm:text-[70px] lg:text-[72px]">
             {fmtTemp(c.temperature_2m)}
@@ -150,7 +135,7 @@
             <span>{t('low_short')} <span class="nums">{fmtTemp(today.temperature_2m_min?.[0])}</span></span>
           </div>
         </div>
-        <div class="flex shrink-0 flex-col items-center">
+        <div class="shrink-0">
           <Icon name={w.icon} size={60} class={iconColor(w.icon)} />
         </div>
       </div>
