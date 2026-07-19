@@ -18,12 +18,17 @@
     const config = $derived({
         mm: { label: t("precip"), color: "var(--color-rain)" },
     } satisfies Chart.ChartConfig);
+
+    // Headroom above the wettest hour so the top tick label never sits at
+    // the plot edge under the card title.
+    const yMax = $derived(Math.max(0.4, ...hours.map((h) => h.precip)) * 1.35);
 </script>
 
-<Chart.Container {config} class="aspect-auto h-24 w-full px-2.5 pb-1">
+<Chart.Container {config} class="mt-1.5 aspect-auto h-24 w-full px-2.5 pb-1">
     <BarChart
         {data}
         x="hour"
+        yDomain={[0, yMax]}
         bandPadding={0.3}
         series={[{ key: "mm", label: t("precip"), color: "var(--color-rain)" }]}
         props={{

@@ -20,6 +20,21 @@
 
     const hi = $derived(Math.max(...hours.map((h) => h.temp)));
     const lo = $derived(Math.min(...hours.map((h) => h.temp)));
+    const dLo = $derived(Math.floor(lo) - 1);
+    const dHi = $derived(Math.ceil(hi) + 1);
+
+    // Explicit tick values kept inside the plot by a margin, so an edge
+    // tick's label can never overhang into the card title or hour labels.
+    const yTicks = $derived.by(() => {
+        const span = dHi - dLo;
+        const pad = Math.max(1, Math.round(span * 0.15));
+        const min = dLo + pad;
+        const max = dHi - pad;
+        const step = Math.max(1, Math.ceil((max - min) / 3));
+        const out: number[] = [];
+        for (let v = min; v <= max; v += step) out.push(v);
+        return out;
+    });
 
     // Per-hour gradient stops so the line is colored by the temperature at
     // each point of the day, on the shared absolute scale.
@@ -39,18 +54,21 @@
     }
 </script>
 
-<Chart.Container {config} class="aspect-auto h-28 w-full px-2.5 pb-1">
+<Chart.Container {config} class="mt-1.5 aspect-auto h-28 w-full px-2.5 pb-1">
     <AreaChart
         {data}
         x="date"
         y="temp"
-        yDomain={[Math.floor(lo) - 1, Math.ceil(hi) + 1]}
+        yDomain={[dLo, dHi]}
         series={[
             { key: "temp", label: t("temp_trend"), color: tempColor(hi) },
         ]}
         props={{
             xAxis: { format: fmtAxisHour, ticks: 4 },
-            yAxis: { format: (d: number) => `${Math.round(d)}°`, ticks: 4 },
+            yAxis: {
+                format: (d: number) => `${Math.round(d)}°`,
+                ticks: yTicks,
+            },
         }}
     >
         {#snippet marks()}
@@ -87,7 +105,7 @@
             </defs>
             <Area
                 seriesKey="temp"
-                y0={() => Math.floor(lo) - 1}
+                y0={() => dLo}
                 fill="url(#temp-fill-{uid})"
                 line={{ stroke: `url(#temp-line-${uid})`, class: "stroke-2" }}
             />

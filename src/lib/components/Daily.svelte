@@ -102,7 +102,9 @@
     }
 </script>
 
-<section class="px-5 pb-8 lg:px-0 lg:pb-0 lg:flex lg:min-h-0 lg:flex-col">
+<section
+    class="select-none px-5 pb-8 lg:px-0 lg:pb-0 lg:flex lg:min-h-0 lg:flex-col"
+>
     <Card.Root
         size="sm"
         class="weather-card gap-0 rounded-lg py-0 lg:min-h-0 lg:overflow-hidden"
