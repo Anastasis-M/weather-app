@@ -34,7 +34,23 @@
         }}
     >
         {#snippet tooltip()}
-            <Chart.Tooltip />
+            <Chart.Tooltip>
+                {#snippet formatter({ value, name, item })}
+                    <div
+                        style="--color-bg: {item.color}"
+                        class="size-2.5 shrink-0 rounded-[2px] bg-(--color-bg)"
+                    ></div>
+                    <div
+                        class="flex flex-1 items-center justify-between gap-3 leading-none"
+                    >
+                        <span class="text-muted-foreground">{name}</span>
+                        <span
+                            class="text-foreground font-mono font-medium tabular-nums"
+                            >{value} mm</span
+                        >
+                    </div>
+                {/snippet}
+            </Chart.Tooltip>
         {/snippet}
     </BarChart>
 </Chart.Container>
