@@ -193,7 +193,7 @@
                 onOpenChange={(v) => (openIdx = v ? i : -1)}
             >
                 <Collapsible.Trigger
-                    class="grid min-h-[56px] w-full cursor-pointer select-none grid-cols-[52px_26px_minmax(0,1fr)_auto] items-center gap-2 px-3 py-0 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50 active:bg-muted/55 data-[state=open]:bg-muted/30 sm:grid-cols-[62px_28px_minmax(0,1fr)_auto] lg:grid-cols-[84px_28px_128px_minmax(0,1fr)_auto] lg:gap-3"
+                    class="grid w-full cursor-pointer select-none grid-cols-[52px_26px_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 px-3 py-2 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50 active:bg-muted/55 data-[state=open]:bg-muted/30 min-[460px]:min-h-[56px] min-[460px]:py-0 sm:grid-cols-[62px_28px_minmax(0,1fr)_auto] lg:grid-cols-[84px_28px_128px_minmax(0,1fr)_auto] lg:gap-3"
                 >
                     <div>
                         <div
@@ -220,12 +220,8 @@
                             class="text-muted-foreground nums text-sm w-9 text-right"
                             >{fmtTemp(min)}</span
                         >
-                        <span
-                            class="block min-[360px]:hidden text-sm text-muted-foreground/70"
-                            >–</span
-                        >
                         <div
-                            class="relative hidden min-[360px]:flex flex-1 h-1.5 rounded-full bg-muted"
+                            class="relative flex flex-1 h-1.5 rounded-full bg-muted"
                         >
                             <span
                                 class="absolute top-0 h-full rounded-full"
@@ -258,7 +254,7 @@
                         {/if}
                         {#if sum >= 0.2 || pop >= 35}
                             <span
-                                class="flex items-center gap-0.5 whitespace-nowrap rounded-md bg-rain/10 px-1.5 py-0.5 text-[11px] text-rain nums"
+                                class="hidden items-center gap-0.5 whitespace-nowrap rounded-md bg-rain/10 px-1.5 py-0.5 text-[11px] text-rain nums min-[460px]:flex"
                             >
                                 <CloudRainIcon class="size-3" />
                                 {rainLabel(sum, pop)}
@@ -270,6 +266,38 @@
                                 : ''}"
                         />
                     </div>
+                    <!-- Mobile meta line: keeps chips out of the bar row so
+                         every track spans the same width and stays comparable -->
+                    <div
+                        class="col-span-full flex min-w-0 items-center gap-1.5 min-[460px]:hidden"
+                    >
+                        <span
+                            class="flex items-center gap-1 whitespace-nowrap rounded-md bg-muted/55 px-1.5 py-0.5 text-[11px] text-muted-foreground nums"
+                        >
+                            {dayBf} Bf
+                            {#if hasDayDir}
+                                <span
+                                    class="inline-flex"
+                                    aria-label={t("wind")}
+                                    style={`transform: rotate(${dayDirDeg ?? 0}deg);`}
+                                >
+                                    <NavigationIcon class="size-3" />
+                                </span>
+                            {/if}
+                        </span>
+                        <span
+                            class="truncate text-[11px] text-muted-foreground/70"
+                            >{t("bf." + dayBf)}</span
+                        >
+                        {#if sum >= 0.2 || pop >= 35}
+                            <span
+                                class="ml-auto flex items-center gap-0.5 whitespace-nowrap rounded-md bg-rain/10 px-1.5 py-0.5 text-[11px] text-rain nums"
+                            >
+                                <CloudRainIcon class="size-3" />
+                                {rainLabel(sum, pop)}
+                            </span>
+                        {/if}
+                    </div>
                 </Collapsible.Trigger>
 
                 <Collapsible.Content
@@ -277,7 +305,9 @@
                 >
                     {@const hours = hourlyForDay(day, i === 0)}
                     <div class="bg-muted/25 px-3 pb-3 pt-1.5">
-                        <div class="grid grid-cols-2 gap-2 mb-2.5">
+                        <div
+                            class="grid grid-cols-1 gap-2 mb-2.5 min-[460px]:grid-cols-2"
+                        >
                             <div
                                 class="weather-card rounded-md px-2.5 py-2 text-xs"
                             >
@@ -290,7 +320,7 @@
                                 >
                             </div>
                             <div
-                                class="weather-card rounded-md px-2.5 py-2 text-xs"
+                                class="weather-card hidden rounded-md px-2.5 py-2 text-xs min-[460px]:block"
                             >
                                 <span class="text-muted-foreground"
                                     >{t("max_wind")}
