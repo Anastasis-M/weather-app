@@ -1,5 +1,6 @@
 <script lang="ts">
     import Icon from "./Icon.svelte";
+    import PrecipChart from "./PrecipChart.svelte";
     import ChevronDownIcon from "@lucide/svelte/icons/chevron-down";
     import NavigationIcon from "@lucide/svelte/icons/navigation";
     import CloudRainIcon from "@lucide/svelte/icons/cloud-rain";
@@ -392,6 +393,16 @@
                                         vector-effect="non-scaling-stroke"
                                     />
                                 </svg>
+                            </div>
+                        {/if}
+                        {#if hours.some((h) => h.precip >= 0.1)}
+                            <div
+                                class="weather-card mb-2.5 rounded-md px-2.5 py-2 text-xs"
+                            >
+                                <span class="text-muted-foreground"
+                                    >{t("precip")}</span
+                                >
+                                <PrecipChart {hours} {tz} />
                             </div>
                         {/if}
                         <ScrollArea
