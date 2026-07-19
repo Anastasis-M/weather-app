@@ -49,13 +49,13 @@
     const currentPrecip = Number(c.precipitation ?? 0);
 
     if (STORM_CODES.has(code)) {
-      return { key: 'storm_now', meta: currentPrecip >= 0.1 ? fmtMm(currentPrecip) : '', tone: 'border-warn/30 bg-warn/10 text-warn' };
+      return { key: 'storm_now', meta: currentPrecip >= 0.1 ? fmtMm(currentPrecip) : '', tone: 'text-warn' };
     }
     if (RAIN_CODES.has(code) || currentPrecip >= 0.1) {
-      return { key: 'rain_now', meta: currentPrecip >= 0.1 ? fmtMm(currentPrecip) : '', tone: 'border-rain/30 bg-rain/10 text-rain' };
+      return { key: 'rain_now', meta: currentPrecip >= 0.1 ? fmtMm(currentPrecip) : '', tone: 'text-rain' };
     }
     if (SNOW_CODES.has(code)) {
-      return { key: 'snow_now', meta: currentPrecip >= 0.1 ? fmtMm(currentPrecip) : '', tone: 'border-snow/30 bg-snow/10 text-snow' };
+      return { key: 'snow_now', meta: currentPrecip >= 0.1 ? fmtMm(currentPrecip) : '', tone: 'text-snow' };
     }
 
     const hourly = data.hourly;
@@ -75,16 +75,16 @@
     }
 
     if (nextAmount >= 0.2 || (rainySignal && maxPop >= 45) || maxPop >= 60) {
-      return { key: 'rain_soon', meta: nextAmount >= 0.1 ? fmtMm(nextAmount) : `${Math.round(maxPop)}%`, tone: 'border-rain/30 bg-rain/10 text-rain' };
+      return { key: 'rain_soon', meta: nextAmount >= 0.1 ? fmtMm(nextAmount) : `${Math.round(maxPop)}%`, tone: 'text-rain' };
     }
 
     const todayPop = Number(today.precipitation_probability_max?.[0] ?? 0);
     const todaySum = Number(today.precipitation_sum?.[0] ?? 0);
     if (todaySum >= 0.3 || todayPop >= 35) {
-      return { key: 'rain_possible_later', meta: todaySum >= 0.1 ? fmtMm(todaySum) : `${Math.round(todayPop)}%`, tone: 'border-muted-foreground/20 bg-muted/50 text-muted-foreground' };
+      return { key: 'rain_possible_later', meta: todaySum >= 0.1 ? fmtMm(todaySum) : `${Math.round(todayPop)}%`, tone: 'text-muted-foreground' };
     }
 
-    return { key: 'dry_now', meta: '', tone: 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300' };
+    return { key: 'dry_now', meta: '', tone: 'text-ok' };
   }
 
   function airQuality(): { value: number | null; key: string; tone: string; pm25: number | null } {
@@ -94,12 +94,12 @@
     if (value == null || Number.isNaN(value)) {
       return { value: null, key: '—', tone: 'text-muted-foreground', pm25 };
     }
-    if (value <= 20) return { value, key: 'air_good', tone: 'text-emerald-300', pm25 };
-    if (value <= 40) return { value, key: 'air_fair', tone: 'text-lime-300', pm25 };
-    if (value <= 60) return { value, key: 'air_moderate', tone: 'text-yellow-300', pm25 };
-    if (value <= 80) return { value, key: 'air_poor', tone: 'text-orange-300', pm25 };
-    if (value <= 100) return { value, key: 'air_very_poor', tone: 'text-red-300', pm25 };
-    return { value, key: 'air_extreme', tone: 'text-fuchsia-300', pm25 };
+    if (value <= 20) return { value, key: 'air_good', tone: 'text-ok', pm25 };
+    if (value <= 40) return { value, key: 'air_fair', tone: 'text-fair', pm25 };
+    if (value <= 60) return { value, key: 'air_moderate', tone: 'text-caution', pm25 };
+    if (value <= 80) return { value, key: 'air_poor', tone: 'text-poor', pm25 };
+    if (value <= 100) return { value, key: 'air_very_poor', tone: 'text-bad', pm25 };
+    return { value, key: 'air_extreme', tone: 'text-severe', pm25 };
   }
 </script>
 
@@ -184,9 +184,16 @@
           <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
             <CloudRainIcon class="size-3.5 text-rain" /> {t('rain_check')}
           </div>
-          <div class="nums mt-0.5 truncate text-[15px]">
-            {rain.meta || ((today.precipitation_sum?.[0] ?? 0).toFixed(1) + 'mm')}
-            <span class="ml-1 text-xs text-muted-foreground">{today.precipitation_probability_max?.[0] ?? 0}%</span>
+          <div class="mt-0.5 flex items-center gap-1.5 truncate">
+            {#if rain.meta}
+              <span class="nums text-[15px]">{rain.meta}</span>
+              <span class="truncate text-xs {rain.tone}">{t(rain.key)}</span>
+            {:else}
+              <span class="truncate text-[15px] {rain.tone}">{t(rain.key)}</span>
+            {/if}
+            {#if (today.precipitation_probability_max?.[0] ?? 0) > 0}
+              <span class="nums text-xs text-muted-foreground">{today.precipitation_probability_max[0]}%</span>
+            {/if}
           </div>
         </div>
         <div class="min-w-0">

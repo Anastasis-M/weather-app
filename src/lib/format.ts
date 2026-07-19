@@ -87,9 +87,9 @@ export type UvKey = 'uv.low' | 'uv.moderate' | 'uv.high' | 'uv.very_high' | 'uv.
 
 export function uvLevel(v: number | null | undefined): { key: UvKey; tone: string } {
   if (v == null) return { key: '', tone: 'text-sub' };
-  if (v < 3)  return { key: 'uv.low',       tone: 'text-emerald-400' };
-  if (v < 6)  return { key: 'uv.moderate',  tone: 'text-yellow-400' };
-  if (v < 8)  return { key: 'uv.high',      tone: 'text-orange-400' };
-  if (v < 11) return { key: 'uv.very_high', tone: 'text-red-400' };
-  return { key: 'uv.extreme', tone: 'text-fuchsia-400' };
+  if (v < 3)  return { key: 'uv.low',       tone: 'text-ok' };
+  if (v < 6)  return { key: 'uv.moderate',  tone: 'text-caution' };
+  if (v < 8)  return { key: 'uv.high',      tone: 'text-poor' };
+  if (v < 11) return { key: 'uv.very_high', tone: 'text-bad' };
+  return { key: 'uv.extreme', tone: 'text-severe' };
 }

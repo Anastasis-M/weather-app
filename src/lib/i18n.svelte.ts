@@ -14,6 +14,8 @@ const dict = {
     refresh: "Refresh",
     autofetch: "Auto-refresh every hour",
     language: "Language",
+    share: "Share",
+    copied: "Link copied",
     updated: "Updated",
     powered_by: "Data from",
     permission_denied: "Location permission denied. Use search instead.",
@@ -54,6 +56,7 @@ const dict = {
     today: "Today",
     precip: "Precip",
     max_wind: "Max wind",
+    temp_trend: "Temperature",
     // wmo
     "wmo.clear": "Clear",
     "wmo.mainly_clear": "Mainly clear",
@@ -127,6 +130,8 @@ const dict = {
     refresh: "Ανανέωση",
     autofetch: "Αυτόματη ανανέωση κάθε ώρα",
     language: "Γλώσσα",
+    share: "Κοινοποίηση",
+    copied: "Ο σύνδεσμος αντιγράφηκε",
     updated: "Ενημερώθηκε",
     powered_by: "Δεδομένα από",
     permission_denied:
@@ -166,6 +171,7 @@ const dict = {
     today: "Σήμερα",
     precip: "Βροχή",
     max_wind: "Μέγ. άνεμος",
+    temp_trend: "Θερμοκρασία",
     "wmo.clear": "Αίθριος",
     "wmo.mainly_clear": "Κυρίως αίθριος",
     "wmo.partly_cloudy": "Μερική συννεφιά",

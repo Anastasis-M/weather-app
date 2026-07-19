@@ -228,6 +228,13 @@
     --color-rain: #60a5fa;
     --color-snow: #bae6fd;
     --color-warn: #f59e0b;
+    /* severity ramp for UV / air quality / rain state */
+    --color-ok: #6ee7b7;
+    --color-fair: #bef264;
+    --color-caution: #fde047;
+    --color-poor: #fdba74;
+    --color-bad: #fca5a5;
+    --color-severe: #f0abfc;
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);

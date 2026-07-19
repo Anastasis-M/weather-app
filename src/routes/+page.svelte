@@ -75,7 +75,7 @@
         copiedTimer = setTimeout(() => {
             copied = false;
         }, 2000);
-        toast.success(t("copied") ?? "Link copied");
+        toast.success(t("copied"));
     }
 
     // ── Auto-fetch every hour ──────────────────────────────────────
@@ -406,7 +406,7 @@
                                     ? 'border-accent/30 bg-accent/20 text-accent hover:bg-accent/25'
                                     : 'text-muted-foreground'}"
                                 onclick={share}
-                                aria-label="Share"
+                                aria-label={t("share")}
                             >
                                 {#if copied}
                                     <CheckIcon class="size-4.5" />
@@ -416,7 +416,7 @@
                             </Button>
                         {/snippet}
                     </Tooltip.Trigger>
-                    <Tooltip.Content>Share</Tooltip.Content>
+                    <Tooltip.Content>{t("share")}</Tooltip.Content>
                 </Tooltip.Root>
                 <Tooltip.Root>
                     <Tooltip.Trigger>
