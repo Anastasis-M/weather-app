@@ -20,16 +20,19 @@
     } satisfies Chart.ChartConfig);
 </script>
 
-<Chart.Container {config} class="aspect-auto h-24 w-full">
+<Chart.Container {config} class="aspect-auto h-24 w-full px-2.5 pb-1">
     <BarChart
         {data}
         x="hour"
-        axis="x"
         bandPadding={0.3}
         series={[{ key: "mm", label: t("precip"), color: "var(--color-rain)" }]}
         props={{
             xAxis: {
                 format: (d: string) => (parseInt(d) % 6 === 0 ? d : ""),
+            },
+            yAxis: {
+                format: (d: number) => (d === 0 ? "" : `${d}`),
+                ticks: 3,
             },
         }}
     >

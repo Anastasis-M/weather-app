@@ -39,7 +39,7 @@
     }
 </script>
 
-<Chart.Container {config} class="aspect-auto h-28 w-full">
+<Chart.Container {config} class="aspect-auto h-28 w-full px-2.5 pb-1">
     <AreaChart
         {data}
         x="date"
