@@ -9,7 +9,10 @@
     import ArrowUpIcon from "@lucide/svelte/icons/arrow-up";
     import SunIcon from "@lucide/svelte/icons/sun";
     import LoaderIcon from "@lucide/svelte/icons/loader-2";
+    import MapIcon from "@lucide/svelte/icons/map";
     import Search from "$lib/components/Search.svelte";
+    import MapDialog from "$lib/components/map/MapDialog.svelte";
+    import MapCard from "$lib/components/map/MapCard.svelte";
     import Current from "$lib/components/Current.svelte";
     import Daily from "$lib/components/Daily.svelte";
     import { Button } from "$lib/components/ui/button";
@@ -43,6 +46,9 @@
             ? `${t("loading_location")} ${loadingLocation.shortName}`
             : t("loading"),
     );
+
+    // ── Weather map ────────────────────────────────────────────────
+    let mapOpen = $state(false);
 
     // ── Share ──────────────────────────────────────────────────────
     let copied = $state(false);
@@ -107,7 +113,11 @@
         ptY0 = e.touches[0].clientY;
         ptX0 = e.touches[0].clientX;
         ptOk = false;
-        ptLocked = false;
+        // Never pull-to-refresh from inside the map (or any opted-out
+        // surface) — a downward drag there is a map pan, not a refresh.
+        ptLocked =
+            mapOpen ||
+            !!(e.target as Element | null)?.closest?.("[data-no-pull]");
     }
 
     function ptMove(e: TouchEvent) {
@@ -400,6 +410,23 @@
                         {#snippet child({ props })}
                             <Button
                                 {...props}
+                                variant="outline"
+                                size="icon"
+                                class="pressable h-11 w-11 rounded-md text-muted-foreground"
+                                onclick={() => (mapOpen = true)}
+                                aria-label={t("map.title")}
+                            >
+                                <MapIcon class="size-4.5" />
+                            </Button>
+                        {/snippet}
+                    </Tooltip.Trigger>
+                    <Tooltip.Content>{t("map.title")}</Tooltip.Content>
+                </Tooltip.Root>
+                <Tooltip.Root>
+                    <Tooltip.Trigger>
+                        {#snippet child({ props })}
+                            <Button
+                                {...props}
                                 variant={copied ? "default" : "outline"}
                                 size="icon"
                                 class="pressable h-11 w-11 rounded-md {copied
@@ -515,8 +542,20 @@
         <div
             class="mt-1 lg:grid lg:grid-cols-[minmax(340px,420px)_minmax(0,1fr)] lg:gap-4 lg:px-5 lg:flex-1 lg:min-h-0"
         >
-            <div class="lg:h-full lg:min-h-0">
+            <div class="lg:flex lg:h-full lg:min-h-0 lg:flex-col">
                 <Current {data} {place} />
+                {#if place}
+                    <!-- Desktop: fill the slack under Current with the live map -->
+                    <div
+                        class="weather-card mt-3 hidden min-h-0 flex-1 overflow-hidden rounded-lg lg:block"
+                    >
+                        <MapCard
+                            {place}
+                            active={!mapOpen}
+                            onexpand={() => (mapOpen = true)}
+                        />
+                    </div>
+                {/if}
             </div>
             <div class="lg:flex lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-col">
                 <Daily {data} />
@@ -541,3 +580,7 @@
         </footer>
     {/if}
 </main>
+
+{#if place}
+    <MapDialog bind:open={mapOpen} {place} />
+{/if}
