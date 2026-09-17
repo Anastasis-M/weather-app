@@ -42,9 +42,16 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
 
-  // Open-Meteo: network-first so the page always receives fresh weather data.
-  // Falls back to the last cached response only when the network is unreachable.
-  if (url.hostname.endsWith("open-meteo.com")) {
+  // Open-Meteo JSON APIs: network-first so the page always receives fresh
+  // weather data. Falls back to the last cached response only when the
+  // network is unreachable. Scoped to the API hosts on purpose: map tile
+  // byte-range (206) responses must bypass the cache — Cache.put rejects
+  // them and tile data would bloat the runtime cache.
+  if (
+    url.hostname === "api.open-meteo.com" ||
+    url.hostname === "air-quality-api.open-meteo.com" ||
+    url.hostname === "geocoding-api.open-meteo.com"
+  ) {
     event.respondWith(networkFirstWeather(request));
     return;
   }
