@@ -13,7 +13,7 @@ import ImageTileSource, {
 } from "ol/source/ImageTile.js";
 import XYZ from "ol/source/XYZ.js";
 
-const SPATIAL_CDN = "https://map-tiles.open-meteo.com/data_spatial";
+const SPATIAL_CDN = "https://openmeteo.s3.amazonaws.com/data_spatial";
 
 export type MapLayerKind = "precipitation";
 
