@@ -228,15 +228,20 @@ export function frameKey(domain: string, frame: MapFrame): string {
 
 export function basemapSource(): XYZ {
   return new XYZ({
-    url: "https://{a-c}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+    url:
+      "https://services.arcgisonline.com/ArcGIS/rest/services/Canvas" +
+      "/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
     crossOrigin: "anonymous",
     transition: 0,
-    maxZoom: 20,
+    maxZoom: 23,
   });
 }
 
 export const MAP_ATTRIBUTION = [
-  { label: "CARTO", href: "https://carto.com/attributions" },
+  {
+    label: "Esri",
+    href: "https://www.esri.com/en-us/legal/terms/full-master-agreement",
+  },
   { label: "OpenStreetMap", href: "https://www.openstreetmap.org/copyright" },
   { label: "Open-Meteo", href: "https://open-meteo.com/" },
 ];
