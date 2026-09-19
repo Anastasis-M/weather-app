@@ -178,12 +178,18 @@
 
         const onPostRender = () => {
             for (const slot of SLOTS) {
-                const renderer = layers[slot].getRenderer() as {
+                const renderer = layers[slot].getRenderer() as unknown as {
                     renderComplete?: boolean;
+                    renderedSourceKey_?: string;
                 } | null;
                 if (!renderer?.renderComplete) continue;
                 const want = wantedKey(slot);
                 if (!want || painted[slot] === want) continue;
+                // renderComplete still describes the previous key until
+                // OpenLayers redraws the layer, so wait for a finished render
+                // that actually used the key we asked for.
+                const drawn = renderer.renderedSourceKey_;
+                if (drawn !== undefined && drawn !== want) continue;
                 painted[slot] = want;
                 player.reportSlotLoaded(slot);
             }
