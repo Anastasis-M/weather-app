@@ -14,7 +14,6 @@ export type Slot = "a" | "b";
 const FRAME_MS = 800;
 const LOAD_TIMEOUT_MS = 6000;
 const FIRST_FRAME_TIMEOUT_MS = 12000;
-const SCRUB_COMMIT_MS = 200;
 
 export class FramePlayer {
   frameSet = $state<FrameSet | null>(null);
@@ -29,13 +28,13 @@ export class FramePlayer {
 
   #kind: MapLayerKind;
   #domain: string | null = null;
-  #dir: 1 | -1 = 1;
-  #pending: Slot | null = null;
+  #inflight: Slot | null = null;
+  #target = 0;
+  #advancing = false;
+  #resumeAfterScrub = false;
   #loadSeq = 0;
   #timer: ReturnType<typeof setInterval> | undefined;
   #watchdog: ReturnType<typeof setTimeout> | undefined;
-  #throttle: ReturnType<typeof setTimeout> | undefined;
-  #throttled = false;
   #autoplay = false;
   #readyTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -53,6 +52,10 @@ export class FramePlayer {
 
   get shownIdx() {
     return this.slots[this.visible];
+  }
+
+  get loading() {
+    return this.ready && this.#inflight !== null;
   }
 
   get isNow() {
@@ -98,9 +101,12 @@ export class FramePlayer {
     this.pause();
     this.frameSet = fs;
     this.idx = start;
-    this.slots = { a: start, b: this.#step(start, 1, fs) };
+    this.slots = { a: start, b: this.#next(start, fs) };
     this.visible = "a";
-    this.#pending = null;
+    this.#inflight = null;
+    this.#target = start;
+    this.#advancing = false;
+    this.#resumeAfterScrub = false;
     this.#clearWatchdog();
 
     this.ready = false;
@@ -124,6 +130,7 @@ export class FramePlayer {
 
   play() {
     if (!this.frameSet) return;
+    this.#resumeAfterScrub = false;
     this.playing = true;
     this.#stopTimer();
     this.#timer = setInterval(() => this.#tick(), FRAME_MS);
@@ -135,6 +142,7 @@ export class FramePlayer {
   }
 
   togglePlay() {
+    this.#resumeAfterScrub = false;
     this.playing ? this.pause() : this.play();
   }
 
@@ -143,50 +151,38 @@ export class FramePlayer {
     if (!total) return;
     const next = Math.min(Math.max(Math.round(to), 0), total - 1);
     if (next === this.idx) return;
-    this.#dir = next > this.idx ? 1 : -1;
+    if (this.playing) {
+      this.pause();
+      this.#resumeAfterScrub = true;
+    }
     this.idx = next;
-    this.pause();
-    this.#throttleCommit();
+    this.#target = next;
+    this.#advancing = false;
+    this.#request();
   }
 
   settle() {
-    clearTimeout(this.#throttle);
-    this.#throttle = undefined;
-    this.#throttled = false;
-    this.#commit();
+    if (this.#resumeAfterScrub) {
+      this.#resumeAfterScrub = false;
+      this.play();
+    }
+    this.#request();
   }
 
   #tick() {
-    if (!this.frameSet || this.#pending || !this.ready) return;
-    this.#dir = 1;
-    this.idx = this.#step(this.idx, 1);
-    this.#commit();
+    if (!this.frameSet || this.#inflight || !this.ready) return;
+    this.#target = this.#next(this.idx);
+    this.#advancing = true;
+    this.#request();
   }
 
   // ── Double buffering ──────────────────────────────────────────
 
-  #throttleCommit() {
-    if (this.#throttle !== undefined) {
-      this.#throttled = true;
-      return;
-    }
-    this.#commit();
-    this.#throttle = setTimeout(() => {
-      this.#throttle = undefined;
-      if (this.#throttled) {
-        this.#throttled = false;
-        this.#throttleCommit();
-      }
-    }, SCRUB_COMMIT_MS);
-  }
-
-  #commit() {
-    if (!this.frameSet) return;
-    const target = this.idx;
+  #request() {
+    if (!this.frameSet || this.#inflight) return;
+    const target = this.#target;
 
     if (this.slots[this.visible] === target) {
-      this.#pending = null;
-      this.#clearWatchdog();
       this.#warm();
       return;
     }
@@ -195,50 +191,57 @@ export class FramePlayer {
     if (this.slots[other] !== target) {
       this.slots = { ...this.slots, [other]: target };
     }
-    this.#pending = other;
+    this.#inflight = other;
 
     if (this.loadedProbe?.(other)) {
-      this.#flip();
+      this.#resolve(other);
       return;
     }
     this.#armWatchdog();
   }
 
   reportSlotLoaded(slot: Slot) {
-    if (slot === this.visible && this.slots[slot] === this.idx) {
+    if (slot === this.visible && this.slots[slot] === this.#target) {
       this.#markReady();
     }
-    if (this.#pending === slot && this.slots[slot] === this.idx) this.#flip();
+    if (this.#inflight === slot) this.#resolve(slot);
   }
 
-  #flip() {
-    if (!this.#pending) return;
-    this.visible = this.#pending;
-    this.#pending = null;
+  #resolve(slot: Slot) {
+    this.#inflight = null;
     this.#clearWatchdog();
+    this.visible = slot;
+    if (this.#advancing) this.idx = this.slots[slot];
     this.#markReady();
-    this.#warm();
+    this.#request();
   }
 
   #warm() {
     if (!this.playing || this.frames.length < 2) return;
-    const next = this.#step(this.shownIdx, this.#dir);
+    const next = this.#next(this.shownIdx);
     if (this.slots[this.hidden] !== next) {
       this.slots = { ...this.slots, [this.hidden]: next };
     }
   }
 
-  #step(from: number, dir: 1 | -1, fs: FrameSet | null = this.frameSet) {
+  #next(from: number, fs: FrameSet | null = this.frameSet) {
     const total = fs?.frames.length ?? 0;
     if (!total) return 0;
-    return (from + dir + total) % total;
+    return (from + 1) % total;
   }
 
   #armWatchdog() {
     this.#clearWatchdog();
     this.#watchdog = setTimeout(() => {
       this.#watchdog = undefined;
-      this.#flip();
+      const slot = this.#inflight;
+      this.#inflight = null;
+      if (slot && this.slots[slot] === this.#target) {
+        this.#resolve(slot);
+        return;
+      }
+      this.#markReady();
+      this.#request();
     }, LOAD_TIMEOUT_MS);
   }
 
@@ -257,8 +260,6 @@ export class FramePlayer {
     this.#autoplay = false;
     this.#stopTimer();
     this.#clearWatchdog();
-    clearTimeout(this.#throttle);
-    this.#throttle = undefined;
     clearTimeout(this.#readyTimer);
     this.#readyTimer = undefined;
   }

@@ -44,7 +44,9 @@
     </Button>
     <Slider
         type="single"
-        class="min-w-0 flex-1 [&_[data-slot=slider-range]]:bg-accent [&_[data-slot=slider-thumb]]:border-accent [&_[data-slot=slider-thumb]]:bg-accent [&_[data-slot=slider-track]]:bg-foreground/15"
+        class="min-w-0 flex-1 [&_[data-slot=slider-range]]:bg-accent [&_[data-slot=slider-range]]:transition-opacity [&_[data-slot=slider-thumb]]:border-accent [&_[data-slot=slider-thumb]]:bg-accent [&_[data-slot=slider-track]]:bg-foreground/15 {player.loading
+            ? '[&_[data-slot=slider-range]]:animate-pulse [&_[data-slot=slider-thumb]]:animate-pulse'
+            : ''}"
         value={player.idx}
         min={0}
         max={Math.max(player.frames.length - 1, 0)}
