@@ -9,17 +9,13 @@
   import SunsetIcon from '@lucide/svelte/icons/sunset';
   import GaugeIcon from '@lucide/svelte/icons/gauge';
   import * as Card from '$lib/components/ui/card';
-  import { describe, iconColor } from '$lib/wmo';
+  import { describe, iconColor, RAIN_CODES, SNOW_CODES, STORM_CODES } from '$lib/wmo';
   import { fmtTemp, fmtTime, fmtMm, compassCode, uvLevel, kmhToBeaufort } from '$lib/format';
   import { t, locale } from '$lib/i18n.svelte';
   import type { Location, WeatherData } from '$lib/weather';
 
   type Props = { data: WeatherData; place: Location | null };
   let { data, place }: Props = $props();
-
-  const RAIN_CODES = new Set([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82]);
-  const SNOW_CODES = new Set([71, 73, 75, 77, 85, 86]);
-  const STORM_CODES = new Set([95, 96, 99]);
 
   const c = $derived(data.current);
   const today = $derived(data.daily);

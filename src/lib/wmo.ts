@@ -4,6 +4,10 @@ export type IconName =
 
 export type Description = { labelKey: string; icon: IconName };
 
+export const RAIN_CODES: ReadonlySet<number> = new Set([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82]);
+export const SNOW_CODES: ReadonlySet<number> = new Set([71, 73, 75, 77, 85, 86]);
+export const STORM_CODES: ReadonlySet<number> = new Set([95, 96, 99]);
+
 export function iconColor(icon: IconName): string {
   switch (icon) {
     case 'sun':        return 'text-accent';
