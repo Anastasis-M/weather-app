@@ -252,6 +252,7 @@
                 <Collapsible.Content
                     class="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down"
                 >
+                    {#if isOpen}
                     {@const hours = hourlyForDay(day, i === 0)}
                     <div class="bg-muted/25 px-3 pb-3 pt-1.5">
                         <div
@@ -377,6 +378,7 @@
                             </ul>
                         </ScrollArea>
                     </div>
+                    {/if}
                 </Collapsible.Content>
             </Collapsible.Root>
         {/each}
