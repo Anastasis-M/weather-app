@@ -4,17 +4,17 @@ Single-package SvelteKit app. No monorepo, no backend beyond route handlers.
 
 ## What This Is
 
-A weather forecast PWA: current conditions, hourly/daily forecast charts, air
-quality, and an animated precipitation map. Deployed on Vercel. Data from
-Open-Meteo.
+A weather forecast PWA: current conditions, today's tips, a sun and moon arc,
+a 7-day forecast with hourly charts, air quality, an animated precipitation
+map and saved places. Deployed on Vercel. Data from Open-Meteo.
 
 ## Stack
 
-- SvelteKit 2 + Svelte 5 (runes) + TypeScript
+- SvelteKit 2 + Svelte 5 (runes) + TypeScript, `adapter-vercel`, `ssr = false`
 - Tailwind CSS v4 (via `@tailwindcss/postcss`, no tailwind.config content pipeline)
 - shadcn-svelte (bits-ui / formsnap / vaul / paneforge), lucide icons
 - OpenLayers (`ol`) + `@openmeteo/weather-map-layer` for the precipitation map
-- layerchart for forecast charts
+- layerchart (through shadcn-svelte chart components) for charts
 - Package manager: pnpm
 
 ## Commands
@@ -33,29 +33,47 @@ Verification = `pnpm check && pnpm build`. Both must pass before declaring work 
 ```
 src/
   routes/
-    +page.svelte        # main view
+    +page.svelte        # main view: loading, refresh, layout
     share/              # shareable snapshot view (+page.server.ts)
     api/
-      forecast/         # Open-Meteo forecast proxy
-      air-quality/      # Open-Meteo air quality proxy
       og/               # OG image generation (@vercel/og)
+      ip-location/      # approximate location from Vercel x-vercel-ip-* headers
   lib/
-    weather.ts          # forecast fetching/normalization
-    wmo.ts              # WMO code -> condition metadata
+    weather.ts          # Open-Meteo client, parsing, per-place forecast cache
+    places.svelte.ts    # saved places, Home, card summaries (runes)
+    placeToasts.ts      # save/remove with undo toasts
+    tips.ts             # today's tip rules (pure)
+    sun.ts              # sun position from sunrise/sunset (pure)
+    moon.ts             # moon phase and lit-shape path (pure)
+    wmo.ts              # WMO code -> condition metadata and code sets
     tempScale.ts        # temperature color scale
     mapLayers.ts        # map layer config
     mapPlayer.svelte.ts # animation timeline state (runes)
-    i18n.svelte.ts      # locale/translation state (runes)
+    i18n.svelte.ts      # locale/translation state (runes), t(key, vars)
     format.ts           # formatting helpers
-    components/         # UI components
+    components/         # UI components (map/ for the map, ui/ for shadcn-svelte)
 static/                 # service worker, icons, manifest
 scripts/inject-sw-version.js
+vercel.json             # security headers and CSP
 ```
+
+The client calls Open-Meteo directly. There are no forecast or air-quality
+proxy routes.
 
 ## Conventions
 
 - Svelte 5 runes everywhere (`$state`, `$derived`, `.svelte.ts` for shared reactive state); no legacy stores.
-- Weather data crosses the API boundary untrusted: parse/normalize in `src/routes/api/*` and `lib/weather.ts`; internal types stay trusted.
+- Weather data crosses the API boundary untrusted: parse/normalize in `lib/weather.ts` and the `src/routes/api/*` handlers; internal types stay trusted.
 - WMO condition logic lives only in `lib/wmo.ts`, never inline condition codes in components.
+- Every user-facing string goes through `i18n.svelte.ts` in English and Greek. Use `{name}` placeholders with `t(key, vars)`, never string concatenation. Greek uses the formal plural.
+- Open-Meteo hourly and daily times are location-local strings. Compare and slice them as strings; don't parse them with `new Date()` in the browser's zone.
+- Day panels in `Daily.svelte` render their charts only while open. Keep it that way: mounting layerchart charts is the app's main rendering cost.
 - Commits follow conventional commits scoped by area: `feat(map):`, `fix(charts):`, `fix(ui):`.
 - No comments unless the code cannot explain itself; prefer renaming over commenting.
+
+## Browser storage
+
+All state lives in `localStorage`: `weather:places:v1` (saved places, Home),
+`weather:place-summaries:v1` (card summaries), `weather:forecasts:v1` (last
+forecast of up to 10 places) and `weather:lang:v1`. The legacy keys
+`weather:location:v1` and `weather:last:v1` are migrated once and removed.
