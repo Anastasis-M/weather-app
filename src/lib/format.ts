@@ -93,3 +93,15 @@ export function uvLevel(v: number | null | undefined): { key: UvKey; tone: strin
   if (v < 11) return { key: 'uv.very_high', tone: 'text-bad' };
   return { key: 'uv.extreme', tone: 'text-severe' };
 }
+
+const AGE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ['day', 86_400_000],
+  ['hour', 3_600_000],
+  ['minute', 60_000],
+];
+
+export function fmtAge(ms: number, locale?: string): string {
+  const rtf = new Intl.RelativeTimeFormat(locale ?? [], { style: 'narrow', numeric: 'auto' });
+  const [unit, size] = AGE_UNITS.find(([, size]) => ms >= size) ?? AGE_UNITS[AGE_UNITS.length - 1];
+  return rtf.format(-Math.round(ms / size), unit);
+}

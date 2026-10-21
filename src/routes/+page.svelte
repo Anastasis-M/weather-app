@@ -16,6 +16,7 @@
     import Current from "$lib/components/Current.svelte";
     import Daily from "$lib/components/Daily.svelte";
     import Tips from "$lib/components/Tips.svelte";
+    import SavedPlaces from "$lib/components/SavedPlaces.svelte";
     import SunArc from "$lib/components/SunArc.svelte";
     import { Button } from "$lib/components/ui/button";
     import { Badge } from "$lib/components/ui/badge";
@@ -26,27 +27,41 @@
         fetchWeather,
         getCurrentPosition,
         reverseGeocode,
-        saveLocation,
-        loadLocation,
         saveWeather,
         loadWeather,
+        latestWeather,
         type Location,
         type WeatherData,
     } from "$lib/weather";
     import { i18n, t, locale, initLang, toggleLang } from "$lib/i18n.svelte";
+    import { fmtAge } from "$lib/format";
+    import {
+        initPlaces,
+        homePlace,
+        placeId,
+        refreshPlaces,
+    } from "$lib/places.svelte";
 
     let place = $state<Location | null>(null);
     let data = $state<WeatherData | null>(null);
     let loading = $state(true);
     let loadingLocation = $state<Location | null>(null);
+    let showingCachedAt = $state<number | null>(null);
     let refreshing = $state(false);
     let error = $state("");
     let updated = $state<Date | null>(null);
     let loadRequestId = 0;
+    let search = $state<Search | null>(null);
     let loadingMessage = $derived(
-        loadingLocation
-            ? `${t("loading_location")} ${loadingLocation.shortName}`
-            : t("loading"),
+        [
+            loadingLocation
+                ? `${t("loading_location")} ${loadingLocation.shortName}`
+                : t("loading"),
+            showingCachedAt != null &&
+                fmtAge(Date.now() - showingCachedAt, locale()),
+        ]
+            .filter(Boolean)
+            .join(" · "),
     );
 
     // ── Weather map ────────────────────────────────────────────────
@@ -161,16 +176,14 @@
     // Hydrate from the persisted forecast when the network is unreachable.
     // Returns true if we recovered something useful to render.
     function hydrateFromCache(preferred?: Location): boolean {
-        const cached = loadWeather();
+        const home = homePlace();
+        const cached =
+            (preferred && loadWeather(preferred)) ??
+            (home && loadWeather(home)) ??
+            latestWeather();
         if (!cached) return false;
-        // Use the requested location only when it matches the cached coords
-        // (~10km); otherwise show the cached place so the data stays honest.
-        const sameSpot =
-            !!preferred &&
-            Math.abs(preferred.latitude - cached.location.latitude) < 0.1 &&
-            Math.abs(preferred.longitude - cached.location.longitude) < 0.1;
         data = cached.data;
-        place = sameSpot ? preferred! : cached.location;
+        place = cached.location;
         updated = new Date(cached.fetchedAt);
         return true;
     }
@@ -183,6 +196,13 @@
 
     async function load(loc: Location) {
         const requestId = ++loadRequestId;
+        const cached = loadWeather(loc);
+        if (cached) {
+            data = cached.data;
+            place = loc;
+            updated = new Date(cached.fetchedAt);
+        }
+        showingCachedAt = cached?.fetchedAt ?? null;
         loading = true;
         loadingLocation = loc;
         error = "";
@@ -192,7 +212,6 @@
             data = w;
             place = loc;
             updated = new Date();
-            saveLocation(loc);
             saveWeather(loc, w);
             armInterval();
             // Keep the URL in sync so the current location is always shareable
@@ -222,6 +241,7 @@
             if (requestId === loadRequestId) {
                 loading = false;
                 loadingLocation = null;
+                showingCachedAt = null;
             }
         }
     }
@@ -231,6 +251,7 @@
         const requestId = loadRequestId;
         refreshing = true;
         error = "";
+        refreshPlaces(i18n.lang);
         try {
             const w = await fetchWeather(place);
             if (requestId !== loadRequestId) return;
@@ -286,6 +307,8 @@
     onMount(async () => {
         initLang();
         document.documentElement.lang = i18n.lang;
+        initPlaces();
+        refreshPlaces(i18n.lang);
         // A shared link (/share?...) redirects here with URL params — honour them first
         const params = new URLSearchParams(window.location.search);
         const pLat = parseFloat(params.get("lat") ?? "");
@@ -301,8 +324,8 @@
             return;
         }
 
-        const saved = loadLocation();
-        if (saved) await load(saved);
+        const home = homePlace();
+        if (home) await load(home);
         else await locate();
     });
 
@@ -325,8 +348,8 @@
         const onOnline = () => {
             if (place) refresh();
             else {
-                const saved = loadLocation();
-                if (saved) load(saved);
+                const home = homePlace();
+                if (home) load(home);
             }
         };
         window.addEventListener("online", onOnline);
@@ -384,7 +407,7 @@
     >
         <div class="relative flex items-center gap-2">
             <div class="flex-1 min-w-0">
-                <Search onSelect={load} onLocate={locate} />
+                <Search bind:this={search} onSelect={load} onLocate={locate} />
             </div>
             <Tooltip.Root>
                 <Tooltip.Trigger>
@@ -472,6 +495,13 @@
             {/if}
         </div>
     </header>
+
+    <SavedPlaces
+        activeId={place ? placeId(place) : null}
+        onSelect={load}
+        onLocate={locate}
+        onAdd={() => search?.focus()}
+    />
 
     {#if loading && !data}
         <div

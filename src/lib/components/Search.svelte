@@ -97,6 +97,10 @@
         };
     });
 
+    export function focus() {
+        inputEl?.focus();
+    }
+
     function pick(r: Place) {
         open = false;
         q = "";

@@ -3,6 +3,9 @@ const AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality";
 const GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1/search";
 const REVERSE_URL = "https://geocoding-api.open-meteo.com/v1/reverse";
 
+export const placeId = (loc: { latitude: number; longitude: number }) =>
+  `${loc.latitude.toFixed(2)},${loc.longitude.toFixed(2)}`;
+
 export type Location = {
   name: string;
   shortName: string;
@@ -134,6 +137,41 @@ export async function fetchWeather({
   return { ...weather, airQuality };
 }
 
+export type PlaceSummary = {
+  temp: number;
+  code: number;
+  isDay: boolean;
+  high: number;
+  low: number;
+  fetchedAt: number;
+};
+
+function parseSummary(raw: any, fetchedAt: number): PlaceSummary | null {
+  const temp = Number(raw?.current?.temperature_2m);
+  const code = Number(raw?.current?.weather_code);
+  const high = Number(raw?.daily?.temperature_2m_max?.[0]);
+  const low = Number(raw?.daily?.temperature_2m_min?.[0]);
+  if ([temp, code, high, low].some(Number.isNaN)) return null;
+  return { temp, code, isDay: raw.current.is_day === 1, high, low, fetchedAt };
+}
+
+export async function fetchPlaceSummaries(
+  coords: { latitude: number; longitude: number }[],
+): Promise<(PlaceSummary | null)[]> {
+  if (!coords.length) return [];
+  const u = new URL(FORECAST_URL);
+  u.searchParams.set("latitude", coords.map((c) => c.latitude).join(","));
+  u.searchParams.set("longitude", coords.map((c) => c.longitude).join(","));
+  u.searchParams.set("current", "temperature_2m,weather_code,is_day");
+  u.searchParams.set("daily", "temperature_2m_max,temperature_2m_min");
+  u.searchParams.set("forecast_days", "1");
+  u.searchParams.set("timezone", "auto");
+  const json = await readWeatherJson(await fetchWeatherResponse(u));
+  const list = Array.isArray(json) ? json : [json];
+  const now = Date.now();
+  return coords.map((_, i) => parseSummary(list[i], now));
+}
+
 export async function searchPlaces(
   query: string,
   language = "en",
@@ -192,13 +230,6 @@ export function getCurrentPosition(
   });
 }
 
-const STORAGE_KEY = "weather:location:v1";
-
-export function saveLocation(loc: Location): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(loc));
-  } catch {}
-}
 const AUTOFETCH_KEY = "weather:autofetch:v1";
 
 export function saveAutofetch(v: boolean): void {
@@ -215,22 +246,15 @@ export function loadAutofetch(): boolean {
   }
 }
 
-export function loadLocation(): Location | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Location) : null;
-  } catch {
-    return null;
-  }
-}
-
 // ── Offline cache ────────────────────────────────────────────────
 // The service worker's runtime cache already keeps the last Open-Meteo
 // response, but persisting it here too means the UI can rehydrate even
 // before the SW takes control (first hit on a new device, private mode,
 // iOS edge cases) — and we keep the original fetch time around so the
 // "Updated" footer stays honest.
-const WEATHER_KEY = "weather:last:v1";
+const FORECASTS_KEY = "weather:forecasts:v1";
+const LEGACY_FORECAST_KEY = "weather:last:v1";
+const MAX_CACHED_FORECASTS = 10;
 
 export type CachedWeather = {
   location: Location;
@@ -238,18 +262,44 @@ export type CachedWeather = {
   fetchedAt: number;
 };
 
-export function saveWeather(location: Location, data: WeatherData): void {
+type ForecastCache = Record<string, CachedWeather>;
+
+function readForecasts(): ForecastCache {
   try {
-    const payload: CachedWeather = { location, data, fetchedAt: Date.now() };
-    localStorage.setItem(WEATHER_KEY, JSON.stringify(payload));
+    const raw = localStorage.getItem(FORECASTS_KEY);
+    const cache: ForecastCache = raw ? JSON.parse(raw) : {};
+    const legacy = localStorage.getItem(LEGACY_FORECAST_KEY);
+    if (legacy) {
+      const entry = JSON.parse(legacy) as CachedWeather;
+      cache[placeId(entry.location)] ??= entry;
+      localStorage.setItem(FORECASTS_KEY, JSON.stringify(cache));
+      localStorage.removeItem(LEGACY_FORECAST_KEY);
+    }
+    return cache;
+  } catch {
+    return {};
+  }
+}
+
+export function saveWeather(location: Location, data: WeatherData): void {
+  const cache = readForecasts();
+  cache[placeId(location)] = { location, data, fetchedAt: Date.now() };
+  const newest = Object.entries(cache)
+    .sort(([, a], [, b]) => b.fetchedAt - a.fetchedAt)
+    .slice(0, MAX_CACHED_FORECASTS);
+  try {
+    localStorage.setItem(FORECASTS_KEY, JSON.stringify(Object.fromEntries(newest)));
   } catch {}
 }
 
-export function loadWeather(): CachedWeather | null {
-  try {
-    const raw = localStorage.getItem(WEATHER_KEY);
-    return raw ? (JSON.parse(raw) as CachedWeather) : null;
-  } catch {
-    return null;
-  }
+export function loadWeather(location: Location): CachedWeather | null {
+  return readForecasts()[placeId(location)] ?? null;
+}
+
+export function latestWeather(): CachedWeather | null {
+  const entries = Object.values(readForecasts());
+  return entries.reduce<CachedWeather | null>(
+    (newest, entry) => (!newest || entry.fetchedAt > newest.fetchedAt ? entry : newest),
+    null,
+  );
 }
