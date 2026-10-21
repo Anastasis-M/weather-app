@@ -3,6 +3,9 @@
     import SearchIcon from "@lucide/svelte/icons/search";
     import MapPinIcon from "@lucide/svelte/icons/map-pin";
     import LoaderIcon from "@lucide/svelte/icons/loader-2";
+    import StarIcon from "@lucide/svelte/icons/star";
+    import { isSaved } from "$lib/places.svelte";
+    import { toggleSaved } from "$lib/placeToasts";
     import * as Command from "$lib/components/ui/command";
     import * as InputGroup from "$lib/components/ui/input-group";
     import { searchPlaces, type Location, type Place } from "$lib/weather";
@@ -101,18 +104,22 @@
         inputEl?.focus();
     }
 
-    function pick(r: Place) {
-        open = false;
-        q = "";
-        results = [];
-        inputEl?.blur();
-        onSelect?.({
+    function toLocation(r: Place): Location {
+        return {
             name: [r.name, r.admin1, r.country_code].filter(Boolean).join(", "),
             shortName: r.name,
             latitude: r.latitude,
             longitude: r.longitude,
             timezone: r.timezone,
-        });
+        };
+    }
+
+    function pick(r: Place) {
+        open = false;
+        q = "";
+        results = [];
+        inputEl?.blur();
+        onSelect?.(toLocation(r));
     }
 
     function onKey(e: KeyboardEvent) {
@@ -219,6 +226,26 @@
                         >
                             {[r.admin1, r.country].filter(Boolean).join(", ")}
                         </Command.Shortcut>
+                        {@const saved = isSaved(r)}
+                        <button
+                            type="button"
+                            class="pressable -my-2 -mr-2 grid size-9 shrink-0 place-items-center rounded-md hover:bg-background/60"
+                            aria-label={t(saved ? "places.unsave_named" : "places.save_named", {
+                                name: [r.name, r.admin1, r.country].filter(Boolean).join(", "),
+                            })}
+                            aria-pressed={saved}
+                            onpointerdown={(e) => e.stopPropagation()}
+                            onclick={(e) => {
+                                e.stopPropagation();
+                                toggleSaved(toLocation(r));
+                            }}
+                        >
+                            <StarIcon
+                                class="size-4.5 {saved
+                                    ? 'fill-accent text-accent'
+                                    : 'text-muted-foreground'}"
+                            />
+                        </button>
                     </Command.Item>
                 {/each}
             </Command.List>

@@ -74,6 +74,64 @@ export function homePlace(): SavedPlace | null {
   return places.list.find((p) => p.id === places.homeId) ?? places.list[0] ?? null;
 }
 
+export const MAX_PLACES = 8;
+
+export type Removal = { place: SavedPlace; index: number; wasHome: boolean };
+
+function persist(): void {
+  write(PLACES_KEY, { list: $state.snapshot(places.list), homeId: places.homeId } satisfies Stored);
+}
+
+export function isSaved(loc: { latitude: number; longitude: number }): boolean {
+  const id = placeId(loc);
+  return places.list.some((p) => p.id === id);
+}
+
+export function savePlace(loc: Location): "saved" | "exists" | "full" {
+  const id = placeId(loc);
+  if (places.list.some((p) => p.id === id)) return "exists";
+  if (places.list.length >= MAX_PLACES) return "full";
+  const { name, shortName, latitude, longitude, timezone } = loc;
+  places.list = [...places.list, { name, shortName, latitude, longitude, timezone, id }];
+  places.homeId ??= id;
+  persist();
+  refreshSaved();
+  return "saved";
+}
+
+export function removePlace(id: string): Removal | null {
+  const index = places.list.findIndex((p) => p.id === id);
+  if (index < 0) return null;
+  const removal = { place: places.list[index], index, wasHome: places.homeId === id };
+  places.list = places.list.filter((p) => p.id !== id);
+  if (removal.wasHome) places.homeId = places.list[0]?.id ?? null;
+  persist();
+  return removal;
+}
+
+export function undoRemove({ place, index, wasHome }: Removal): void {
+  if (places.list.some((p) => p.id === place.id) || places.list.length >= MAX_PLACES) return;
+  const list = [...places.list];
+  list.splice(Math.min(index, list.length), 0, place);
+  places.list = list;
+  if (wasHome || !places.homeId) places.homeId = place.id;
+  persist();
+}
+
+export function setHome(id: string): void {
+  places.homeId = id;
+  persist();
+}
+
+export function movePlace(from: number, to: number): void {
+  if (from === to || to < 0 || to >= places.list.length) return;
+  const list = [...places.list];
+  const [moved] = list.splice(from, 1);
+  list.splice(to, 0, moved);
+  places.list = list;
+  persist();
+}
+
 async function refreshSaved(): Promise<void> {
   if (!places.list.length) return;
   const list = places.list;

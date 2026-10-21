@@ -5,14 +5,16 @@
   import WindIcon from '@lucide/svelte/icons/wind';
   import SunMediumIcon from '@lucide/svelte/icons/sun-medium';
   import GaugeIcon from '@lucide/svelte/icons/gauge';
+  import StarIcon from '@lucide/svelte/icons/star';
+  import { Button } from '$lib/components/ui/button';
   import * as Card from '$lib/components/ui/card';
   import { describe, iconColor } from '$lib/wmo';
   import { fmtTemp, compassCode, uvLevel, kmhToBeaufort } from '$lib/format';
   import { t } from '$lib/i18n.svelte';
   import type { Location, WeatherData } from '$lib/weather';
 
-  type Props = { data: WeatherData; place: Location | null };
-  let { data, place }: Props = $props();
+  type Props = { data: WeatherData; place: Location | null; saved?: boolean; onToggleSave?: () => void };
+  let { data, place, saved = false, onToggleSave }: Props = $props();
 
   const c = $derived(data.current);
   const today = $derived(data.daily);
@@ -55,6 +57,18 @@
             {placeDetail || t(w.labelKey)}
           </Card.Description>
         </div>
+        {#if place && onToggleSave}
+          <Button
+            variant="outline"
+            size="sm"
+            onclick={onToggleSave}
+            aria-pressed={saved}
+            class="pressable h-9 shrink-0 gap-1.5 {saved ? 'border-accent/30 bg-accent/15 text-accent hover:bg-accent/20 hover:text-accent' : 'text-muted-foreground'}"
+          >
+            <StarIcon class="size-4 {saved ? 'fill-accent' : ''}" />
+            {t(saved ? 'places.saved' : 'places.save')}
+          </Button>
+        {/if}
       </div>
     </Card.Header>
 

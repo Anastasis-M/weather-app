@@ -5,11 +5,14 @@
   import HouseIcon from '@lucide/svelte/icons/house';
   import NavigationIcon from '@lucide/svelte/icons/navigation';
   import WifiOffIcon from '@lucide/svelte/icons/wifi-off';
+  import PencilIcon from '@lucide/svelte/icons/pencil';
+  import XIcon from '@lucide/svelte/icons/x';
+  import ManagePlaces from './ManagePlaces.svelte';
   import { Skeleton } from '$lib/components/ui/skeleton';
   import { describe, iconColor } from '$lib/wmo';
   import { fmtAge, fmtTemp } from '$lib/format';
   import { t, locale } from '$lib/i18n.svelte';
-  import { placeId, places } from '$lib/places.svelte';
+  import { MAX_PLACES, placeId, places } from '$lib/places.svelte';
   import type { Location, PlaceSummary } from '$lib/weather';
 
   type Props = {
@@ -23,6 +26,45 @@
   const cardClass = 'weather-card w-34 shrink-0 snap-start rounded-lg border px-3 py-2 text-left transition-colors lg:w-auto lg:min-w-0 lg:max-w-44 lg:flex-1';
   const tone = (active: boolean) => (active ? 'border-accent bg-card' : 'border-transparent bg-card/60 hover:bg-card');
   const empty = $derived(places.ready && !places.list.length && !places.here);
+  const full = $derived(places.list.length >= MAX_PLACES);
+  const LONG_PRESS_MS = 500;
+
+  let managing = $state(false);
+  let limitNote = $state(false);
+  let pressTimer: ReturnType<typeof setTimeout> | undefined;
+  let pressStart: { x: number; y: number } | null = null;
+  let longPressed = false;
+
+  function pressDown(e: PointerEvent) {
+    longPressed = false;
+    pressStart = { x: e.clientX, y: e.clientY };
+    pressTimer = setTimeout(() => {
+      longPressed = true;
+      managing = true;
+    }, LONG_PRESS_MS);
+  }
+
+  function pressMove(e: PointerEvent) {
+    if (pressStart && Math.hypot(e.clientX - pressStart.x, e.clientY - pressStart.y) > 10) pressCancel();
+  }
+
+  function pressCancel() {
+    clearTimeout(pressTimer);
+    pressStart = null;
+  }
+
+  function selectCard(place: Location) {
+    if (longPressed) {
+      longPressed = false;
+      return;
+    }
+    onSelect(place);
+  }
+
+  function add() {
+    if (full) limitNote = true;
+    else onAdd();
+  }
 </script>
 
 {#snippet reading(summary: PlaceSummary | undefined | null)}
@@ -77,7 +119,13 @@
           <li class="contents">
             <button
               type="button"
-              onclick={() => onSelect(place)}
+              onclick={() => selectCard(place)}
+              onpointerdown={pressDown}
+              onpointermove={pressMove}
+              onpointerup={pressCancel}
+              onpointerleave={pressCancel}
+              onpointercancel={pressCancel}
+              oncontextmenu={(e) => longPressed && e.preventDefault()}
               aria-current={activeId === place.id ? 'true' : undefined}
               class="pressable {cardClass} {tone(activeId === place.id)}"
             >
@@ -104,14 +152,38 @@
         <li class="contents">
           <button
             type="button"
-            onclick={onAdd}
-            class="pressable flex w-20 shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-line text-[11px] text-muted-foreground hover:text-foreground"
+            onclick={add}
+            aria-disabled={full}
+            class="pressable flex w-20 shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-line text-[11px] text-muted-foreground {full
+              ? 'opacity-40'
+              : 'hover:text-foreground'}"
           >
             <PlusIcon class="size-4" />
             {t('places.add')}
           </button>
         </li>
+        {#if places.list.length}
+          <li class="contents">
+            <button
+              type="button"
+              onclick={() => (managing = true)}
+              class="pressable flex shrink-0 snap-start items-center gap-1.5 self-center px-2 text-xs font-medium text-accent hover:underline"
+            >
+              <PencilIcon class="size-3.5" />
+              {t('places.edit')}
+            </button>
+          </li>
+        {/if}
       </ul>
+      {#if limitNote && full}
+        <div role="status" class="weather-card mt-2 flex items-start gap-2.5 rounded-lg border border-line px-3.5 py-2.5 text-[13px] text-muted-foreground">
+          <button type="button" aria-label={t('places.dismiss')} class="pressable -m-1 p-1" onclick={() => (limitNote = false)}>
+            <XIcon class="size-4" />
+          </button>
+          <span>{t('places.full', { max: MAX_PLACES })}</span>
+        </div>
+      {/if}
     {/if}
   </nav>
+  <ManagePlaces bind:open={managing} />
 {/if}

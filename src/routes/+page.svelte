@@ -41,7 +41,9 @@
         homePlace,
         placeId,
         refreshPlaces,
+        isSaved,
     } from "$lib/places.svelte";
+    import { toggleSaved } from "$lib/placeToasts";
 
     let place = $state<Location | null>(null);
     let data = $state<WeatherData | null>(null);
@@ -598,7 +600,12 @@
             class="mt-1 lg:grid lg:grid-cols-[minmax(340px,420px)_minmax(0,1fr)] lg:gap-4 lg:px-5 lg:flex-1 lg:min-h-0"
         >
             <div class="lg:h-full lg:min-h-0 lg:overflow-y-auto">
-                <Current {data} {place} />
+                <Current
+                    {data}
+                    {place}
+                    saved={place ? isSaved(place) : false}
+                    onToggleSave={() => place && toggleSaved(place)}
+                />
                 <Tips {data} />
                 <SunArc {data} />
             </div>
