@@ -26,6 +26,7 @@
     import {
         fetchWeather,
         getCurrentPosition,
+        fetchIpLocation,
         reverseGeocode,
         saveWeather,
         loadWeather,
@@ -271,36 +272,58 @@
         }
     }
 
+    async function currentLocation(): Promise<Location> {
+        const pos = await getCurrentPosition();
+        const p = await reverseGeocode(pos, i18n.lang);
+        return {
+            name: p
+                ? [p.name, p.admin1, p.country_code].filter(Boolean).join(", ")
+                : t("current_location"),
+            shortName: p?.name ?? t("current_location"),
+            latitude: pos.latitude,
+            longitude: pos.longitude,
+            timezone: p?.timezone,
+        };
+    }
+
+    function locateError(e: any): string {
+        return e?.code === 1
+            ? t("permission_denied")
+            : e?.message || t("could_not_get_location");
+    }
+
     async function locate() {
         const requestId = ++loadRequestId;
         loading = true;
         loadingLocation = null;
         error = "";
         try {
-            const pos = await getCurrentPosition();
+            const loc = await currentLocation();
             if (requestId !== loadRequestId) return;
-            const p = await reverseGeocode(pos, i18n.lang);
-            if (requestId !== loadRequestId) return;
-            const loc: Location = {
-                name: p
-                    ? [p.name, p.admin1, p.country_code]
-                          .filter(Boolean)
-                          .join(", ")
-                    : t("current_location"),
-                shortName: p?.name ?? t("current_location"),
-                latitude: pos.latitude,
-                longitude: pos.longitude,
-                timezone: p?.timezone,
-            };
             await load(loc);
         } catch (e: any) {
             if (requestId !== loadRequestId) return;
-            error =
-                e?.code === 1
-                    ? t("permission_denied")
-                    : e?.message || t("could_not_get_location");
+            error = locateError(e);
             loading = false;
             loadingLocation = null;
+        }
+    }
+
+    async function firstVisit() {
+        let precise = false;
+        const approximate = fetchIpLocation().then((loc) => {
+            if (loc && !precise) load(loc);
+            return loc;
+        });
+        try {
+            const loc = await currentLocation();
+            precise = true;
+            await load(loc);
+            refreshPlaces(i18n.lang);
+        } catch (e: any) {
+            if (await approximate) return;
+            error = locateError(e);
+            loading = false;
         }
     }
 
@@ -326,7 +349,7 @@
 
         const home = homePlace();
         if (home) await load(home);
-        else await locate();
+        else await firstVisit();
     });
 
     onMount(() => () => clearInterval(intervalId));

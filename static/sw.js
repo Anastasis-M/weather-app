@@ -58,6 +58,7 @@ self.addEventListener("fetch", (event) => {
 
   // Same-origin: network-first for navigation (HTML), cache-first for hashed assets.
   if (url.origin === self.location.origin) {
+    if (url.pathname.startsWith("/api/")) return;
     if (request.mode === "navigate") {
       event.respondWith(networkFirst(request));
     } else {

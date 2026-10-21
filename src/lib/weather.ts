@@ -208,6 +208,22 @@ export async function reverseGeocode(
   }
 }
 
+export async function fetchIpLocation(): Promise<Location | null> {
+  try {
+    const r = await fetch("/api/ip-location", { cache: "no-store" });
+    if (r.status !== 200) return null;
+    const loc = await r.json();
+    const valid =
+      typeof loc?.shortName === "string" &&
+      loc.shortName !== "" &&
+      Number.isFinite(loc.latitude) &&
+      Number.isFinite(loc.longitude);
+    return valid ? (loc as Location) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function getCurrentPosition(
   opts: PositionOptions = {},
 ): Promise<{ latitude: number; longitude: number }> {
