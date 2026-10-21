@@ -33,6 +33,12 @@
     const hourly = $derived(data.hourly);
 
     let openIdx = $state(0);
+    let closingIdx = $state(-1);
+
+    function setOpen(i: number, open: boolean) {
+        if (openIdx >= 0 && (open || openIdx === i)) closingIdx = openIdx;
+        openIdx = open ? i : -1;
+    }
 
     const tempRange = $derived.by(() => {
         const mins = daily.temperature_2m_min as number[];
@@ -129,7 +135,7 @@
             {#if i > 0}<Separator />{/if}
             <Collapsible.Root
                 open={isOpen}
-                onOpenChange={(v) => (openIdx = v ? i : -1)}
+                onOpenChange={(v) => setOpen(i, v)}
             >
                 <Collapsible.Trigger
                     class="grid w-full cursor-pointer select-none grid-cols-[52px_26px_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 px-3 py-2 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50 active:bg-muted/55 data-[state=open]:bg-muted/30 min-[460px]:min-h-[56px] min-[460px]:py-0 sm:grid-cols-[62px_28px_minmax(0,1fr)_auto] lg:grid-cols-[84px_28px_128px_minmax(0,1fr)_auto] lg:gap-3"
@@ -251,8 +257,11 @@
 
                 <Collapsible.Content
                     class="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down"
+                    onanimationend={() => {
+                        if (!isOpen && closingIdx === i) closingIdx = -1;
+                    }}
                 >
-                    {#if isOpen}
+                    {#if isOpen || closingIdx === i}
                     {@const hours = hourlyForDay(day, i === 0)}
                     <div class="bg-muted/25 px-3 pb-3 pt-1.5">
                         <div
