@@ -15,6 +15,7 @@
     import MapCard from "$lib/components/map/MapCard.svelte";
     import Current from "$lib/components/Current.svelte";
     import Daily from "$lib/components/Daily.svelte";
+    import Tips from "$lib/components/Tips.svelte";
     import { Button } from "$lib/components/ui/button";
     import { Badge } from "$lib/components/ui/badge";
     import * as Alert from "$lib/components/ui/alert";
@@ -542,12 +543,15 @@
         <div
             class="mt-1 lg:grid lg:grid-cols-[minmax(340px,420px)_minmax(0,1fr)] lg:gap-4 lg:px-5 lg:flex-1 lg:min-h-0"
         >
-            <div class="lg:flex lg:h-full lg:min-h-0 lg:flex-col">
+            <div class="lg:h-full lg:min-h-0 lg:overflow-y-auto">
                 <Current {data} {place} />
+                <Tips {data} />
+            </div>
+            <div class="lg:flex lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-col">
+                <Daily {data} />
                 {#if place}
-                    <!-- Desktop: fill the slack under Current with the live map -->
                     <div
-                        class="weather-card mt-3 hidden min-h-0 flex-1 overflow-hidden rounded-lg lg:block"
+                        class="weather-card mt-3 hidden h-[clamp(220px,34vh,340px)] shrink-0 overflow-hidden rounded-lg lg:block"
                     >
                         <MapCard
                             {place}
@@ -556,9 +560,6 @@
                         />
                     </div>
                 {/if}
-            </div>
-            <div class="lg:flex lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-col">
-                <Daily {data} />
             </div>
         </div>
         <footer

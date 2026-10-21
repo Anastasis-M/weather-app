@@ -40,13 +40,27 @@ const dict = {
     air_very_poor: "Very poor",
     air_extreme: "Extreme",
     precip_today: "Precip today",
-    rain_check: "Rain check",
-    rain_now: "Raining now",
-    storm_now: "Storm nearby",
-    snow_now: "Snowing now",
-    rain_soon: "Rain likely soon",
-    rain_possible_later: "Rain possible later",
-    dry_now: "No rain nearby",
+    // tips
+    "tips.title": "Today's tips",
+    "tips.chance": "Chance of rain",
+    "tips.umbrella": "Take an umbrella",
+    "tips.umbrella.detail": "Rain likely {from} to {to}, up to {peak}%, about {total} in total",
+    "tips.frost": "Frost tonight",
+    "tips.frost.detail": "{temp}° at {at}, cover plants and expect ice on the car",
+    "tips.heat": "Hot day",
+    "tips.heat.detail": "Feels like {temp}° at {at}, drink water and find shade",
+    "tips.air": "Go easy outdoors",
+    "tips.air.detail": "Poor air (AQI {aqi}), skip the hard run",
+    "tips.layer": "Bring a layer for later",
+    "tips.layer.detail": "{now}° now, down to {low}° by {at}",
+    "tips.sunscreen": "Wear sunscreen",
+    "tips.sunscreen.detail": "UV {uv} from {from} to {to}",
+    "tips.outside": "Best time to be outside",
+    "tips.outside.detail": "{from} to {to}, dry and {temp}°",
+    "tips.laundry": "Good drying day",
+    "tips.laundry.detail": "Dry, sunny and breezy until {until}",
+    "tips.wind": "Windy",
+    "tips.wind.detail": "Up to {bf} Bf from {from}, secure loose things",
     sunrise: "Sunrise",
     sunset: "Sunset",
     // hourly / daily
@@ -170,13 +184,26 @@ const dict = {
     air_very_poor: "Πολύ κακή",
     air_extreme: "Ακραία",
     precip_today: "Βροχή σήμερα",
-    rain_check: "Έλεγχος βροχής",
-    rain_now: "Βρέχει τώρα",
-    storm_now: "Καταιγίδα κοντά",
-    snow_now: "Χιονίζει τώρα",
-    rain_soon: "Πιθανή βροχή σύντομα",
-    rain_possible_later: "Ίσως βρέξει αργότερα",
-    dry_now: "Δεν φαίνεται βροχή",
+    "tips.title": "Συμβουλές για σήμερα",
+    "tips.chance": "Πιθανότητα βροχής",
+    "tips.umbrella": "Πάρτε ομπρέλα",
+    "tips.umbrella.detail": "Πιθανή βροχή {from} έως {to}, μέχρι {peak}%, περίπου {total} συνολικά",
+    "tips.frost": "Παγετός απόψε",
+    "tips.frost.detail": "{temp}° στις {at}, προστατέψτε τα φυτά, πάγος στο αυτοκίνητο",
+    "tips.heat": "Πολλή ζέστη",
+    "tips.heat.detail": "Αίσθηση {temp}° στις {at}, πίνετε νερό και μείνετε στη σκιά",
+    "tips.air": "Περιορίστε την άσκηση έξω",
+    "tips.air.detail": "Κακή ποιότητα αέρα (AQI {aqi}), αποφύγετε την έντονη άσκηση",
+    "tips.layer": "Πάρτε κάτι ζεστό για αργότερα",
+    "tips.layer.detail": "{now}° τώρα, πέφτει στους {low}° ως τις {at}",
+    "tips.sunscreen": "Βάλτε αντηλιακό",
+    "tips.sunscreen.detail": "UV {uv} από {from} έως {to}",
+    "tips.outside": "Η καλύτερη ώρα για έξω",
+    "tips.outside.detail": "{from} έως {to}, χωρίς βροχή και {temp}°",
+    "tips.laundry": "Καλή μέρα για άπλωμα",
+    "tips.laundry.detail": "Ξηρός καιρός, ήλιος και αεράκι ως τις {until}",
+    "tips.wind": "Δυνατός αέρας",
+    "tips.wind.detail": "Έως {bf} Bf από τις {from}, μαζέψτε ό,τι μπορεί να πετάξει",
     sunrise: "Ανατολή",
     sunset: "Δύση",
     next_24h: "Επόμενες 24 ώρες",
@@ -264,12 +291,18 @@ type Key = keyof (typeof dict)["en"];
 
 export const i18n = $state<{ lang: Lang }>({ lang: "en" });
 
-export function t(key: Key | string): string {
+export function t(
+  key: Key | string,
+  vars?: Record<string, string | number>,
+): string {
   const table = dict[i18n.lang] as Record<string, string>;
-  return (
+  const text =
     table[key as string] ??
     (dict.en as Record<string, string>)[key as string] ??
-    String(key)
+    String(key);
+  if (!vars) return text;
+  return text.replace(/\{(\w+)\}/g, (match, name) =>
+    name in vars ? String(vars[name]) : match,
   );
 }
 

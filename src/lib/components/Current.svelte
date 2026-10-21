@@ -4,13 +4,12 @@
   import DropletIcon from '@lucide/svelte/icons/droplets';
   import WindIcon from '@lucide/svelte/icons/wind';
   import SunMediumIcon from '@lucide/svelte/icons/sun-medium';
-  import CloudRainIcon from '@lucide/svelte/icons/cloud-rain';
   import SunriseIcon from '@lucide/svelte/icons/sunrise';
   import SunsetIcon from '@lucide/svelte/icons/sunset';
   import GaugeIcon from '@lucide/svelte/icons/gauge';
   import * as Card from '$lib/components/ui/card';
-  import { describe, iconColor, RAIN_CODES, SNOW_CODES, STORM_CODES } from '$lib/wmo';
-  import { fmtTemp, fmtTime, fmtMm, compassCode, uvLevel, kmhToBeaufort } from '$lib/format';
+  import { describe, iconColor } from '$lib/wmo';
+  import { fmtTemp, fmtTime, compassCode, uvLevel, kmhToBeaufort } from '$lib/format';
   import { t, locale } from '$lib/i18n.svelte';
   import type { Location, WeatherData } from '$lib/weather';
 
@@ -26,61 +25,7 @@
   const dir = $derived(compassCode(c.wind_direction_10m));
   const placeTitle = $derived(place?.shortName || place?.name || '—');
   const placeDetail = $derived(place?.name && place?.shortName && place.name !== place.shortName ? place.name : '');
-  const rain = $derived.by(() => rainCheck());
   const air = $derived.by(() => airQuality());
-
-  function hourlyStartIndex(): number {
-    const times = data.hourly?.time as string[] | undefined;
-    if (!times?.length) return 0;
-    const anchor = c.time ? new Date(c.time).getTime() : Date.now();
-    for (let i = 0; i < times.length; i++) {
-      if (new Date(times[i]).getTime() >= anchor - 30 * 60 * 1000) return i;
-    }
-    return 0;
-  }
-
-  function rainCheck(): { key: string; meta: string; tone: string } {
-    const code = Number(c.weather_code);
-    const currentPrecip = Number(c.precipitation ?? 0);
-
-    if (STORM_CODES.has(code)) {
-      return { key: 'storm_now', meta: currentPrecip >= 0.1 ? fmtMm(currentPrecip) : '', tone: 'text-warn' };
-    }
-    if (RAIN_CODES.has(code) || currentPrecip >= 0.1) {
-      return { key: 'rain_now', meta: currentPrecip >= 0.1 ? fmtMm(currentPrecip) : '', tone: 'text-rain' };
-    }
-    if (SNOW_CODES.has(code)) {
-      return { key: 'snow_now', meta: currentPrecip >= 0.1 ? fmtMm(currentPrecip) : '', tone: 'text-snow' };
-    }
-
-    const hourly = data.hourly;
-    const start = hourlyStartIndex();
-    const end = Math.min(start + 4, hourly?.time?.length ?? 0);
-    let maxPop = 0;
-    let nextAmount = 0;
-    let rainySignal = false;
-
-    for (let i = start; i < end; i++) {
-      const pop = Number(hourly.precipitation_probability?.[i] ?? 0);
-      const amount = Number(hourly.precipitation?.[i] ?? 0);
-      const nextCode = Number(hourly.weather_code?.[i] ?? 0);
-      maxPop = Math.max(maxPop, pop);
-      nextAmount = Math.max(nextAmount, amount);
-      rainySignal = rainySignal || RAIN_CODES.has(nextCode) || STORM_CODES.has(nextCode);
-    }
-
-    if (nextAmount >= 0.2 || (rainySignal && maxPop >= 45) || maxPop >= 60) {
-      return { key: 'rain_soon', meta: nextAmount >= 0.1 ? fmtMm(nextAmount) : `${Math.round(maxPop)}%`, tone: 'text-rain' };
-    }
-
-    const todayPop = Number(today.precipitation_probability_max?.[0] ?? 0);
-    const todaySum = Number(today.precipitation_sum?.[0] ?? 0);
-    if (todaySum >= 0.3 || todayPop >= 35) {
-      return { key: 'rain_possible_later', meta: todaySum >= 0.1 ? fmtMm(todaySum) : `${Math.round(todayPop)}%`, tone: 'text-muted-foreground' };
-    }
-
-    return { key: 'dry_now', meta: '', tone: 'text-ok' };
-  }
 
   function airQuality(): { value: number | null; key: string; tone: string; pm25: number | null } {
     const current = data.airQuality?.current;
@@ -158,22 +103,6 @@
               {#if air.pm25 != null}<span class="nums text-xs text-muted-foreground">PM2.5 {air.pm25.toFixed(1)}</span>{/if}
             {:else}
               <span class="text-base text-muted-foreground">—</span>
-            {/if}
-          </div>
-        </div>
-        <div class="min-w-0">
-          <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <CloudRainIcon class="size-3.5 text-rain" /> {t('rain_check')}
-          </div>
-          <div class="mt-0.5 flex items-center gap-1.5 truncate">
-            {#if rain.meta}
-              <span class="nums text-[15px]">{rain.meta}</span>
-              <span class="truncate text-xs {rain.tone}">{t(rain.key)}</span>
-            {:else}
-              <span class="truncate text-[15px] {rain.tone}">{t(rain.key)}</span>
-            {/if}
-            {#if (today.precipitation_probability_max?.[0] ?? 0) > 0}
-              <span class="nums text-xs text-muted-foreground">{today.precipitation_probability_max[0]}%</span>
             {/if}
           </div>
         </div>
