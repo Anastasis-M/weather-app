@@ -23,7 +23,7 @@ All weather data comes from [Open-Meteo](https://open-meteo.com). No API keys ar
 - Tailwind CSS 4, shadcn-svelte (bits-ui, vaul) and lucide icons.
 - Charts with layerchart through shadcn-svelte's chart components.
 - OpenLayers with `@openmeteo/weather-map-layer` for the precipitation map, on an Esri dark gray basemap.
-- `@vercel/og` for share images and `@vercel/analytics` for page views.
+- `@vercel/og` for share images and `@vercel/analytics` for page views. Page views are recorded without the query string, so the viewed place's coordinates and name never reach analytics.
 
 ## Develop
 
