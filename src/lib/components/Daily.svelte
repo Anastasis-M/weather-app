@@ -110,7 +110,7 @@
 </script>
 
 <section
-    class="select-none px-5 pb-8 lg:px-0 lg:pb-0 lg:flex lg:min-h-0 lg:flex-none lg:last:flex-1 lg:flex-col"
+    class="select-none px-5 pb-8 lg:px-0 lg:pb-0 lg:flex lg:min-h-0 lg:flex-none lg:flex-col"
 >
     <Card.Root
         size="sm"
