@@ -146,7 +146,7 @@ export type PlaceSummary = {
   fetchedAt: number;
 };
 
-function parseSummary(raw: any, fetchedAt: number): PlaceSummary | null {
+export function parseSummary(raw: any, fetchedAt: number): PlaceSummary | null {
   const temp = Number(raw?.current?.temperature_2m);
   const code = Number(raw?.current?.weather_code);
   const high = Number(raw?.daily?.temperature_2m_max?.[0]);

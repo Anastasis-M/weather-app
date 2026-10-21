@@ -42,6 +42,7 @@
         placeId,
         refreshPlaces,
         isSaved,
+        updateSummaryFromForecast,
     } from "$lib/places.svelte";
     import { toggleSaved } from "$lib/placeToasts";
 
@@ -216,6 +217,7 @@
             place = loc;
             updated = new Date();
             saveWeather(loc, w);
+            updateSummaryFromForecast(loc, w);
             armInterval();
             // Keep the URL in sync so the current location is always shareable
             const p = new URLSearchParams({
@@ -261,6 +263,7 @@
             data = w;
             updated = new Date();
             saveWeather(place, w);
+            updateSummaryFromForecast(place, w);
             armInterval(); // reset the 1-hour timer
         } catch (e: any) {
             if (requestId !== loadRequestId) return;

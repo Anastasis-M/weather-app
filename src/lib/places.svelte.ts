@@ -1,10 +1,12 @@
 import {
   fetchPlaceSummaries,
   getCurrentPosition,
+  parseSummary,
   placeId,
   reverseGeocode,
   type Location,
   type PlaceSummary,
+  type WeatherData,
 } from "$lib/weather";
 
 export type SavedPlace = Location & { id: string };
@@ -181,6 +183,14 @@ async function refreshHere(lang: string): Promise<void> {
       summary,
     };
   } catch {}
+}
+
+export function updateSummaryFromForecast(loc: Location, data: WeatherData): void {
+  const id = placeId(loc);
+  const summary = parseSummary(data, Date.now());
+  if (!summary || !places.list.some((p) => p.id === id)) return;
+  places.summaries = { ...places.summaries, [id]: summary };
+  write(SUMMARIES_KEY, $state.snapshot(places.summaries));
 }
 
 export async function refreshPlaces(lang: string): Promise<void> {
