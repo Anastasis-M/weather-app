@@ -5,6 +5,7 @@
     import { tempGradient } from "$lib/tempScale";
     import ChevronDownIcon from "@lucide/svelte/icons/chevron-down";
     import NavigationIcon from "@lucide/svelte/icons/navigation";
+    import WindIcon from "@lucide/svelte/icons/wind";
     import CloudRainIcon from "@lucide/svelte/icons/cloud-rain";
     import * as Card from "$lib/components/ui/card";
     import { Badge } from "$lib/components/ui/badge";
@@ -180,10 +181,14 @@
                                 variant="secondary"
                                 class="nums hidden text-muted-foreground min-[460px]:inline-flex"
                             >
-                                {dayBf} Bf
+                                <span class="sr-only"
+                                    >{t("wind")}: {dayBf} Bf, {t("bf." + dayBf)}</span
+                                >
+                                <WindIcon aria-hidden="true" />
+                                <span aria-hidden="true">{dayBf} Bf</span>
                                 <span
                                     class="inline-flex"
-                                    aria-label={t("wind")}
+                                    aria-hidden="true"
                                     title={t("wind")}
                                     style={`transform: rotate(${dayDirDeg ?? 0}deg);`}
                                 >
@@ -212,23 +217,29 @@
                     >
                         <Badge
                             variant="secondary"
-                            class="nums text-muted-foreground"
+                            class="nums min-w-0 shrink text-muted-foreground"
                         >
-                            {dayBf} Bf
+                            <span class="sr-only"
+                                >{t("wind")}: {dayBf} Bf, {t("bf." + dayBf)}</span
+                            >
+                            <WindIcon aria-hidden="true" />
+                            <span aria-hidden="true">{dayBf} Bf</span>
                             {#if hasDayDir}
                                 <span
                                     class="inline-flex"
-                                    aria-label={t("wind")}
+                                    aria-hidden="true"
                                     style={`transform: rotate(${dayDirDeg ?? 0}deg);`}
                                 >
                                     <NavigationIcon class="size-3" />
                                 </span>
                             {/if}
+                            <span class="text-muted-foreground/50" aria-hidden="true"
+                                >·</span
+                            >
+                            <span class="truncate font-normal" aria-hidden="true"
+                                >{t("bf." + dayBf)}</span
+                            >
                         </Badge>
-                        <span
-                            class="truncate text-[11px] text-muted-foreground/70"
-                            >{t("bf." + dayBf)}</span
-                        >
                         {#if sum >= 0.2 || pop >= 35}
                             <Badge class="nums ml-auto bg-rain/10 text-rain">
                                 <CloudRainIcon />
