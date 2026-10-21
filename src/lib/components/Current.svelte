@@ -4,13 +4,11 @@
   import DropletIcon from '@lucide/svelte/icons/droplets';
   import WindIcon from '@lucide/svelte/icons/wind';
   import SunMediumIcon from '@lucide/svelte/icons/sun-medium';
-  import SunriseIcon from '@lucide/svelte/icons/sunrise';
-  import SunsetIcon from '@lucide/svelte/icons/sunset';
   import GaugeIcon from '@lucide/svelte/icons/gauge';
   import * as Card from '$lib/components/ui/card';
   import { describe, iconColor } from '$lib/wmo';
-  import { fmtTemp, fmtTime, compassCode, uvLevel, kmhToBeaufort } from '$lib/format';
-  import { t, locale } from '$lib/i18n.svelte';
+  import { fmtTemp, compassCode, uvLevel, kmhToBeaufort } from '$lib/format';
+  import { t } from '$lib/i18n.svelte';
   import type { Location, WeatherData } from '$lib/weather';
 
   type Props = { data: WeatherData; place: Location | null };
@@ -18,7 +16,6 @@
 
   const c = $derived(data.current);
   const today = $derived(data.daily);
-  const tz = $derived(data.timezone as string);
   const w = $derived(describe(c.weather_code, c.is_day));
   const uv = $derived(uvLevel(today.uv_index_max?.[0]));
   const bf = $derived(kmhToBeaufort(c.wind_speed_10m));
@@ -81,7 +78,7 @@
         </div>
       </div>
 
-      <div class="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-border/70 pt-2.5 sm:grid-cols-3 lg:grid-cols-2">
+      <div class="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-border/70 pt-2.5 sm:grid-cols-4 lg:grid-cols-2">
         <div class="min-w-0">
           <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
             <WindIcon class="size-3.5" /> {t('wind')}
@@ -120,12 +117,6 @@
             <DropletIcon class="size-3.5 text-rain" /> {t('humidity')}
           </div>
           <div class="nums mt-0.5 text-[15px]">{c.relative_humidity_2m ?? '—'}<span class="text-sm text-muted-foreground">%</span></div>
-        </div>
-        <div class="min-w-0">
-          <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <SunriseIcon class="size-3.5 text-accent" /> {t('sunrise')} / <SunsetIcon class="size-3.5 text-accent" /> {t('sunset')}
-          </div>
-          <div class="nums mt-0.5 text-[15px]">{fmtTime(today.sunrise?.[0], tz, locale())} · {fmtTime(today.sunset?.[0], tz, locale())}</div>
         </div>
       </div>
     </Card.Content>

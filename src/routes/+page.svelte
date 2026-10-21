@@ -16,6 +16,7 @@
     import Current from "$lib/components/Current.svelte";
     import Daily from "$lib/components/Daily.svelte";
     import Tips from "$lib/components/Tips.svelte";
+    import SunArc from "$lib/components/SunArc.svelte";
     import { Button } from "$lib/components/ui/button";
     import { Badge } from "$lib/components/ui/badge";
     import * as Alert from "$lib/components/ui/alert";
@@ -546,6 +547,7 @@
             <div class="lg:h-full lg:min-h-0 lg:overflow-y-auto">
                 <Current {data} {place} />
                 <Tips {data} />
+                <SunArc {data} />
             </div>
             <div class="lg:flex lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-col">
                 <Daily {data} />
