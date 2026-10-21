@@ -31,6 +31,7 @@
         saveWeather,
         loadWeather,
         latestWeather,
+        maxRainChanceAhead,
         type Location,
         type WeatherData,
     } from "$lib/weather";
@@ -56,6 +57,13 @@
     let updated = $state<Date | null>(null);
     let loadRequestId = 0;
     let search = $state<Search | null>(null);
+    const MAP_RAIN_CHANCE = 30;
+    const MAP_LOOKAHEAD_HOURS = 24;
+    const showMap = $derived(
+        !!place &&
+            !!data &&
+            maxRainChanceAhead(data, MAP_LOOKAHEAD_HOURS) > MAP_RAIN_CHANCE,
+    );
     let loadingMessage = $derived(
         [
             loadingLocation
@@ -612,11 +620,13 @@
                 <Tips {data} />
                 <SunArc {data} />
             </div>
-            <div class="lg:flex lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-col">
+            <div
+                class="lg:flex lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-col lg:overflow-y-auto"
+            >
                 <Daily {data} />
-                {#if place}
+                {#if place && showMap}
                     <div
-                        class="weather-card mt-3 hidden h-[clamp(220px,34vh,340px)] shrink-0 overflow-hidden rounded-lg lg:block"
+                        class="weather-card mt-3 hidden min-h-[220px] flex-1 overflow-hidden rounded-lg lg:block"
                     >
                         <MapCard
                             {place}

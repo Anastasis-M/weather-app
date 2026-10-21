@@ -155,6 +155,15 @@ export function parseSummary(raw: any, fetchedAt: number): PlaceSummary | null {
   return { temp, code, isDay: raw.current.is_day === 1, high, low, fetchedAt };
 }
 
+export function maxRainChanceAhead(data: WeatherData, hours: number): number {
+  const times: string[] = data?.hourly?.time ?? [];
+  const pops: number[] = data?.hourly?.precipitation_probability ?? [];
+  const nowHour = String(data?.current?.time ?? "").slice(0, 13);
+  const start = times.findIndex((t) => t.slice(0, 13) >= nowHour);
+  if (start < 0) return 0;
+  return Math.max(0, ...pops.slice(start, start + hours).map((p) => Number(p) || 0));
+}
+
 export async function fetchPlaceSummaries(
   coords: { latitude: number; longitude: number }[],
 ): Promise<(PlaceSummary | null)[]> {

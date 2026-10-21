@@ -32,7 +32,7 @@
     const daily = $derived(data.daily);
     const hourly = $derived(data.hourly);
 
-    let openIdx = $state(0);
+    let openIdx = $state(-1);
     let closingIdx = $state(-1);
 
     function setOpen(i: number, open: boolean) {
@@ -110,7 +110,7 @@
 </script>
 
 <section
-    class="select-none px-5 pb-8 lg:px-0 lg:pb-0 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col"
+    class="select-none px-5 pb-8 lg:px-0 lg:pb-0 lg:flex lg:min-h-0 lg:flex-none lg:last:flex-1 lg:flex-col"
 >
     <Card.Root
         size="sm"
