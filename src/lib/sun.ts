@@ -2,8 +2,9 @@ export type SunDay = { sunrise: string; sunset: string };
 
 export type SunState =
   | { phase: 'day'; progress: number; left: number; length: number; sunrise: string; sunset: string }
-  | { phase: 'night'; untilRise: number; length: number; sunrise: string; sunset: string };
+  | { phase: 'night'; progress: number; untilRise: number; length: number; sunrise: string; sunset: string };
 
+const DAY_MS = 86_400_000;
 const localMs = (iso: string) => Date.parse(`${iso}Z`);
 
 export function localNowMs(utcOffsetSeconds: number, now = Date.now()): number {
@@ -16,7 +17,14 @@ export function sunState(nowMs: number, today: SunDay, tomorrow: SunDay | null):
   if (Number.isNaN(rise) || Number.isNaN(set) || set <= rise) return null;
 
   if (nowMs < rise) {
-    return { phase: 'night', untilRise: rise - nowMs, length: set - rise, ...today };
+    const nightStart = set - DAY_MS;
+    return {
+      phase: 'night',
+      progress: Math.max(0, (nowMs - nightStart) / (rise - nightStart)),
+      untilRise: rise - nowMs,
+      length: set - rise,
+      ...today,
+    };
   }
   if (nowMs < set) {
     return { phase: 'day', progress: (nowMs - rise) / (set - rise), left: set - nowMs, length: set - rise, ...today };
@@ -25,5 +33,11 @@ export function sunState(nowMs: number, today: SunDay, tomorrow: SunDay | null):
   const nextRise = localMs(tomorrow.sunrise);
   const nextSet = localMs(tomorrow.sunset);
   if (Number.isNaN(nextRise) || Number.isNaN(nextSet) || nextSet <= nextRise) return null;
-  return { phase: 'night', untilRise: nextRise - nowMs, length: nextSet - nextRise, ...tomorrow };
+  return {
+    phase: 'night',
+    progress: Math.min(1, (nowMs - set) / (nextRise - set)),
+    untilRise: nextRise - nowMs,
+    length: nextSet - nextRise,
+    ...tomorrow,
+  };
 }

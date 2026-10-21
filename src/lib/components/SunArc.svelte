@@ -2,9 +2,9 @@
   import * as Card from '$lib/components/ui/card';
   import SunriseIcon from '@lucide/svelte/icons/sunrise';
   import SunsetIcon from '@lucide/svelte/icons/sunset';
-  import MoonIcon from '@lucide/svelte/icons/moon';
   import { t } from '$lib/i18n.svelte';
   import { localNowMs, sunState } from '$lib/sun';
+  import { moonLitPath, moonPhase } from '$lib/moon';
   import type { WeatherData } from '$lib/weather';
 
   type Props = { data: WeatherData };
@@ -41,7 +41,11 @@
       .map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`)
       .join(' ');
 
-  const progress = $derived(sun?.phase === 'day' ? sun.progress : 0);
+  const progress = $derived(sun?.progress ?? 0);
+  const night = $derived(sun?.phase === 'night');
+  const moon = $derived(moonPhase(clock));
+  const MOON_R = 7;
+  const southern = $derived((data.latitude ?? 0) < 0);
   const dot = $derived(point(progress));
   const travelled = $derived(arc(progress));
   const fill = $derived(`${travelled} L${dot.x.toFixed(1)},${BASE} L${PAD},${BASE} Z`);
@@ -66,60 +70,88 @@
               {t('sun.rises_in', { in: duration(sun.untilRise) })}
             {/if}
           </span>
-          <span class="nums text-xs text-muted-foreground">{t('sun.length', { length: duration(sun.length) })}</span>
+          <span class="nums text-xs text-muted-foreground">
+            {#if night}
+              {t(`moon.${moon.key}`)} · {Math.round(moon.illumination * 100)}%
+            {:else}
+              {t('sun.length', { length: duration(sun.length) })}
+            {/if}
+          </span>
         </div>
 
-        <div class="relative">
-          <svg
-            viewBox="0 0 {W} {H}"
-            class="mt-1 w-full overflow-visible {sun.phase === 'night' ? 'opacity-60' : ''}"
-            role="img"
-            aria-label={t('sun.position')}
-          >
-            <defs>
-              <linearGradient id="sun-sky" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="var(--color-warn)" stop-opacity="0.32" />
-                <stop offset="100%" stop-color="var(--color-warn)" stop-opacity="0" />
-              </linearGradient>
-              <radialGradient id="sun-glow">
-                <stop offset="0%" stop-color="var(--color-warn)" stop-opacity="0.55" />
-                <stop offset="100%" stop-color="var(--color-warn)" stop-opacity="0" />
-              </radialGradient>
-            </defs>
+        <svg
+          viewBox="0 0 {W} {H}"
+          class="mt-1 w-full overflow-visible"
+          role="img"
+          aria-label={night
+            ? t('moon.position', { phase: t(`moon.${moon.key}`), lit: Math.round(moon.illumination * 100) })
+            : t('sun.position')}
+        >
+          <defs>
+            <linearGradient id="sun-sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--color-warn)" stop-opacity="0.32" />
+              <stop offset="100%" stop-color="var(--color-warn)" stop-opacity="0" />
+            </linearGradient>
+            <linearGradient id="moon-sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--color-snow)" stop-opacity="0.16" />
+              <stop offset="100%" stop-color="var(--color-snow)" stop-opacity="0" />
+            </linearGradient>
+            <radialGradient id="sun-glow">
+              <stop offset="0%" stop-color="var(--color-warn)" stop-opacity="0.55" />
+              <stop offset="100%" stop-color="var(--color-warn)" stop-opacity="0" />
+            </radialGradient>
+            <radialGradient id="moon-glow">
+              <stop offset="0%" stop-color="var(--color-snow)" stop-opacity="0.35" />
+              <stop offset="100%" stop-color="var(--color-snow)" stop-opacity="0" />
+            </radialGradient>
+          </defs>
+          <path d={arc(1)} fill="none" stroke="var(--color-line)" stroke-width="1.5" stroke-dasharray="3 5" stroke-linecap="round" />
+          <line x1="6" x2={W - 6} y1={BASE} y2={BASE} stroke="var(--color-line)" stroke-width="1" />
+          <path d={fill} fill={night ? 'url(#moon-sky)' : 'url(#sun-sky)'} />
+          <path
+            d={travelled}
+            fill="none"
+            stroke={night ? 'var(--color-snow)' : 'var(--color-warn)'}
+            stroke-opacity={night ? 0.55 : 1}
+            stroke-width="2.5"
+            stroke-linecap="round"
+          />
+          <circle cx={PAD} cy={BASE} r="2.5" fill={night ? 'var(--color-snow)' : 'var(--color-warn)'} />
+          <circle cx={W - PAD} cy={BASE} r="2.5" fill="var(--color-mute)" />
+          {#if night}
+            <circle cx={dot.x} cy={dot.y} r="18" fill="url(#moon-glow)" />
+            <circle cx={dot.x} cy={dot.y} r={MOON_R} fill="var(--color-line)" stroke="var(--color-mute)" stroke-width="0.75" />
             <path
-              d={arc(1)}
-              fill="none"
-              stroke={sun.phase === 'day' ? 'var(--color-line)' : 'var(--color-mute)'}
-              stroke-width="1.5"
-              stroke-dasharray="3 5"
-              stroke-linecap="round"
+              d={moonLitPath(moon.cycle, dot.x, dot.y, MOON_R)}
+              fill="var(--color-snow)"
+              transform={southern ? `matrix(-1 0 0 1 ${2 * dot.x} 0)` : undefined}
             />
-            <line x1="6" x2={W - 6} y1={BASE} y2={BASE} stroke="var(--color-line)" stroke-width="1" />
-            {#if sun.phase === 'day'}
-              <path d={fill} fill="url(#sun-sky)" />
-              <path d={travelled} fill="none" stroke="var(--color-warn)" stroke-width="2.5" stroke-linecap="round" />
-              <circle cx={dot.x} cy={dot.y} r="18" fill="url(#sun-glow)" />
-              <circle cx={dot.x} cy={dot.y} r="6.5" fill="var(--color-warn)" />
-              <circle cx={PAD} cy={BASE} r="2.5" fill="var(--color-warn)" />
-            {:else}
-              <circle cx={PAD} cy={BASE} r="2.5" fill="var(--color-mute)" />
-            {/if}
-            <circle cx={W - PAD} cy={BASE} r="2.5" fill="var(--color-mute)" />
-          </svg>
-          {#if sun.phase === 'night'}
-            <MoonIcon class="absolute left-1/2 top-1/2 size-6 -translate-x-1/2 text-sub" aria-hidden="true" />
+          {:else}
+            <circle cx={dot.x} cy={dot.y} r="18" fill="url(#sun-glow)" />
+            <circle cx={dot.x} cy={dot.y} r="6.5" fill="var(--color-warn)" />
           {/if}
-        </div>
+        </svg>
 
         <div class="nums -mt-0.5 flex justify-between text-xs text-muted-foreground">
-          <span class="flex items-center gap-1">
-            <SunriseIcon class="size-3.5 text-warn" aria-label={t('sunrise')} />
-            {hhmm(sun.sunrise)}
-          </span>
-          <span class="flex items-center gap-1">
-            {hhmm(sun.sunset)}
-            <SunsetIcon class="size-3.5 text-warn" aria-label={t('sunset')} />
-          </span>
+          {#if night}
+            <span class="flex items-center gap-1">
+              <SunsetIcon class="size-3.5 text-warn" aria-label={t('sunset')} />
+              {hhmm(sun.sunset)}
+            </span>
+            <span class="flex items-center gap-1">
+              {hhmm(sun.sunrise)}
+              <SunriseIcon class="size-3.5 text-warn" aria-label={t('sunrise')} />
+            </span>
+          {:else}
+            <span class="flex items-center gap-1">
+              <SunriseIcon class="size-3.5 text-warn" aria-label={t('sunrise')} />
+              {hhmm(sun.sunrise)}
+            </span>
+            <span class="flex items-center gap-1">
+              {hhmm(sun.sunset)}
+              <SunsetIcon class="size-3.5 text-warn" aria-label={t('sunset')} />
+            </span>
+          {/if}
         </div>
       </Card.Content>
     </Card.Root>
