@@ -49,10 +49,12 @@
             const minSpread = spreadOf("temperature_2m_min", day);
             const maxSpread = spreadOf("temperature_2m_max", day);
             const sumSpread = spreadOf("precipitation_sum", day);
+            const windSpread = spreadOf("wind_speed_10m_max", day);
             return {
                 ...dayForecast(data, i),
                 band: minSpread && maxSpread ? { low: minSpread.low, high: maxSpread.high } : null,
                 sumSpread,
+                windSpread,
             };
         }),
     );
@@ -75,6 +77,10 @@
     const RAIN_DISAGREE_MM = 2;
     const rainDisagrees = (s: Spread | null) =>
         !!s && s.high - s.low >= Math.max(RAIN_DISAGREE_MM, s.median);
+
+    const WIND_DISAGREE_BF = 2;
+    const windDisagrees = (s: Spread | null) =>
+        !!s && kmhToBeaufort(s.high) - kmhToBeaufort(s.low) >= WIND_DISAGREE_BF;
 
     function barStyle(min: number, max: number): string {
         const { lo, span } = tempRange;
@@ -150,6 +156,19 @@
     </Tooltip.Root>
 {/snippet}
 
+{#snippet windRange(s: Spread)}
+    {@const low = kmhToBeaufort(s.low)}
+    {@const high = kmhToBeaufort(s.high)}
+    <Tooltip.Root>
+        <Tooltip.Trigger tabindex={-1}>
+            {#snippet child({ props })}
+                <span {...props} class="font-normal text-muted-foreground/60">{low}–{high}</span>
+            {/snippet}
+        </Tooltip.Trigger>
+        <Tooltip.Content>{t("consensus.range", { low: `${low} Bf`, high: `${high} Bf` })}</Tooltip.Content>
+    </Tooltip.Root>
+{/snippet}
+
 {#snippet rangeBar(min: number, max: number, band: { low: number; high: number } | null, isToday: boolean)}
     <div class="relative flex flex-1 h-1.5 rounded-full bg-muted">
         {#if band}
@@ -193,7 +212,7 @@
         <div class="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
         {#each daily.time as day, i}
             {@const w = describe(daily.weather_code[i], 1)}
-            {@const { min, max, sum, wind, band, sumSpread } = days[i]}
+            {@const { min, max, sum, wind, band, sumSpread, windSpread } = days[i]}
             {@const pop = daily.precipitation_probability_max?.[i] ?? 0}
             {@const dayBf = kmhToBeaufort(wind)}
             {@const dayDirDeg = daily.wind_direction_10m_dominant?.[i]}
@@ -261,6 +280,9 @@
                                 >
                                 <WindIcon aria-hidden="true" />
                                 <span aria-hidden="true">{dayBf} Bf</span>
+                                {#if windDisagrees(windSpread)}
+                                    {@render windRange(windSpread!)}
+                                {/if}
                                 <Tooltip.Root>
                                     <Tooltip.Trigger tabindex={-1}>
                                         {#snippet child({ props })}
@@ -309,6 +331,9 @@
                             >
                             <WindIcon aria-hidden="true" />
                             <span aria-hidden="true">{dayBf} Bf</span>
+                            {#if windDisagrees(windSpread)}
+                                {@render windRange(windSpread!)}
+                            {/if}
                             {#if hasDayDir}
                                 <span
                                     class="inline-flex"
@@ -318,12 +343,6 @@
                                     <NavigationIcon class="size-3" />
                                 </span>
                             {/if}
-                            <span class="text-muted-foreground/50" aria-hidden="true"
-                                >·</span
-                            >
-                            <span class="truncate font-normal" aria-hidden="true"
-                                >{t("bf." + dayBf)}</span
-                            >
                         </Badge>
                         {#if sum >= 0.2 || pop >= 35}
                             <Badge class="nums ml-auto bg-rain/10 text-rain">

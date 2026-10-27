@@ -62,7 +62,7 @@
   <section class="px-5 pb-4 lg:px-0 lg:pb-0 lg:pt-3">
     <Card.Root class="weather-card gap-0 rounded-lg py-0">
       <Card.Content class="px-4 pt-3.5 pb-3 sm:px-5">
-        <div class="flex items-baseline justify-between gap-2">
+        <div class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
           <span class="font-medium">
             {#if sun.phase === 'day'}
               {t('sun.left', { left: duration(sun.left) })}
@@ -70,7 +70,7 @@
               {t('sun.rises_in', { in: duration(sun.untilRise) })}
             {/if}
           </span>
-          <span class="nums text-xs text-muted-foreground">
+          <span class="nums whitespace-nowrap text-xs text-muted-foreground">
             {#if night}
               {t(`moon.${moon.key}`)} · {Math.round(moon.illumination * 100)}%
             {:else}
