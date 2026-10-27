@@ -8,6 +8,7 @@
     import { toggleSaved } from "#lib/placeToasts.js";
     import * as Command from "#lib/components/ui/command/index.js";
     import * as InputGroup from "#lib/components/ui/input-group/index.js";
+    import * as Tooltip from "#lib/components/ui/tooltip/index.js";
     import { searchPlaces, type Location, type Place } from "#lib/weather.js";
     import { i18n, t } from "#lib/i18n.svelte.js";
 
@@ -166,16 +167,23 @@
             class="h-10 px-0 text-[15px]"
         />
         <InputGroup.Addon align="inline-end" class="py-0 pr-0.5">
-            <InputGroup.Button
-                variant="ghost"
-                size="icon-sm"
-                class="pressable size-10 text-muted-foreground"
-                onclick={() => onLocate?.()}
-                aria-label={t("use_location")}
-                title={t("use_location")}
-            >
-                <MapPinIcon />
-            </InputGroup.Button>
+            <Tooltip.Root>
+                <Tooltip.Trigger>
+                    {#snippet child({ props })}
+                        <InputGroup.Button
+                            {...props}
+                            variant="ghost"
+                            size="icon-sm"
+                            class="pressable size-10 text-muted-foreground"
+                            onclick={() => onLocate?.()}
+                            aria-label={t("use_location")}
+                        >
+                            <MapPinIcon />
+                        </InputGroup.Button>
+                    {/snippet}
+                </Tooltip.Trigger>
+                <Tooltip.Content>{t("use_location")}</Tooltip.Content>
+            </Tooltip.Root>
         </InputGroup.Addon>
     </InputGroup.Root>
 

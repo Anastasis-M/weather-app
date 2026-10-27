@@ -8,6 +8,7 @@
   import StarIcon from '@lucide/svelte/icons/star';
   import { Button } from '#lib/components/ui/button/index.js';
   import * as Card from '#lib/components/ui/card/index.js';
+  import * as Tooltip from '#lib/components/ui/tooltip/index.js';
   import { describe, iconColor } from '#lib/wmo.js';
   import { fmtTemp, compassCode, uvLevel, kmhToBeaufort } from '#lib/format.js';
   import { t } from '#lib/i18n.svelte.js';
@@ -59,18 +60,25 @@
           </Card.Description>
         </div>
         {#if place && onToggleSave}
-          <Button
-            variant="outline"
-            size="sm"
-            onclick={onToggleSave}
-            aria-pressed={saved}
-            aria-label={t(saved ? 'places.saved' : 'places.save')}
-            title={t(saved ? 'places.saved' : 'places.save')}
-            class="pressable size-9 shrink-0 gap-1.5 px-0 sm:w-auto sm:px-3 {saved ? 'border-accent/30 bg-accent/15 text-accent hover:bg-accent/20 hover:text-accent' : 'text-muted-foreground'}"
-          >
-            <StarIcon class="size-4 {saved ? 'fill-accent' : ''}" />
-            <span class="hidden sm:inline">{t(saved ? 'places.saved' : 'places.save')}</span>
-          </Button>
+          <Tooltip.Root>
+            <Tooltip.Trigger>
+              {#snippet child({ props })}
+                <Button
+                  {...props}
+                  variant="outline"
+                  size="sm"
+                  onclick={onToggleSave}
+                  aria-pressed={saved}
+                  aria-label={t(saved ? 'places.saved' : 'places.save')}
+                  class="pressable size-9 shrink-0 gap-1.5 px-0 sm:w-auto sm:px-3 {saved ? 'border-accent/30 bg-accent/15 text-accent hover:bg-accent/20 hover:text-accent' : 'text-muted-foreground'}"
+                >
+                  <StarIcon class="size-4 {saved ? 'fill-accent' : ''}" />
+                  <span class="hidden sm:inline">{t(saved ? 'places.saved' : 'places.save')}</span>
+                </Button>
+              {/snippet}
+            </Tooltip.Trigger>
+            <Tooltip.Content>{t(saved ? 'places.saved' : 'places.save')}</Tooltip.Content>
+          </Tooltip.Root>
         {/if}
       </div>
     </Card.Header>

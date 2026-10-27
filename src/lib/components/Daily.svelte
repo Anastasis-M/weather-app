@@ -12,6 +12,7 @@
     import * as Collapsible from "#lib/components/ui/collapsible/index.js";
     import { Separator } from "#lib/components/ui/separator/index.js";
     import { ScrollArea } from "#lib/components/ui/scroll-area/index.js";
+    import * as Tooltip from "#lib/components/ui/tooltip/index.js";
     import { describe, iconColor } from "#lib/wmo.js";
     import {
         fmtTemp,
@@ -137,11 +138,37 @@
 </script>
 
 {#snippet rainRange(s: Spread)}
-    <span
-        class="font-normal text-rain/60"
-        title={t("consensus.range", { low: fmtMm(s.low), high: fmtMm(s.high) })}
-        >{Math.round(s.low)}–{Math.round(s.high)}</span
-    >
+    <Tooltip.Root>
+        <Tooltip.Trigger tabindex={-1}>
+            {#snippet child({ props })}
+                <span {...props} class="font-normal text-rain/60"
+                    >{Math.round(s.low)}–{Math.round(s.high)}</span
+                >
+            {/snippet}
+        </Tooltip.Trigger>
+        <Tooltip.Content>{t("consensus.range", { low: fmtMm(s.low), high: fmtMm(s.high) })}</Tooltip.Content>
+    </Tooltip.Root>
+{/snippet}
+
+{#snippet rangeBar(min: number, max: number, band: { low: number; high: number } | null, isToday: boolean)}
+    <div class="relative flex flex-1 h-1.5 rounded-full bg-muted">
+        {#if band}
+            <span
+                class="absolute top-0 h-full rounded-full bg-foreground/15"
+                style={bandStyle(band.low, band.high)}
+            ></span>
+        {/if}
+        <span
+            class="absolute top-0 h-full rounded-full"
+            style={barStyle(min, max)}
+        ></span>
+        {#if isToday}
+            <span
+                class="absolute top-1/2 size-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground shadow-[0_0_0_2px_var(--card)]"
+                style={nowDotStyle(min, max)}
+            ></span>
+        {/if}
+    </div>
 {/snippet}
 
 <section
@@ -152,12 +179,12 @@
         class="weather-card gap-0 rounded-lg py-0 lg:min-h-0 lg:flex-1 lg:overflow-hidden"
     >
         <Card.Header class="border-b border-border/70 px-3 pb-2.5! lg:shrink-0">
-            <div class="flex items-baseline justify-between gap-2">
+            <div class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
                 <Card.Title class="section-title">
                     {t("forecast_7d")}
                 </Card.Title>
                 {#if modelCount >= 2}
-                    <span class="text-[11px] text-muted-foreground/70">
+                    <span class="whitespace-nowrap text-[11px] text-muted-foreground/70">
                         {t("consensus.models", { count: modelCount })}
                     </span>
                 {/if}
@@ -205,29 +232,22 @@
                             class="text-muted-foreground nums text-sm w-9 text-right"
                             >{fmtTemp(min)}</span
                         >
-                        <div
-                            class="relative flex flex-1 h-1.5 rounded-full bg-muted"
-                            title={band
-                                ? t("consensus.range", { low: fmtTemp(band.low), high: fmtTemp(band.high) })
-                                : undefined}
-                        >
-                            {#if band}
-                                <span
-                                    class="absolute top-0 h-full rounded-full bg-foreground/15"
-                                    style={bandStyle(band.low, band.high)}
-                                ></span>
-                            {/if}
-                            <span
-                                class="absolute top-0 h-full rounded-full"
-                                style={barStyle(min, max)}
-                            ></span>
-                            {#if i === 0}
-                                <span
-                                    class="absolute top-1/2 size-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground shadow-[0_0_0_2px_var(--card)]"
-                                    style={nowDotStyle(min, max)}
-                                ></span>
-                            {/if}
-                        </div>
+                        {#if band}
+                            <Tooltip.Root>
+                                <Tooltip.Trigger tabindex={-1}>
+                                    {#snippet child({ props })}
+                                        <div {...props} class="flex flex-1 items-center self-stretch">
+                                            {@render rangeBar(min, max, band, i === 0)}
+                                        </div>
+                                    {/snippet}
+                                </Tooltip.Trigger>
+                                <Tooltip.Content
+                                    >{t("consensus.range", { low: fmtTemp(band.low), high: fmtTemp(band.high) })}</Tooltip.Content
+                                >
+                            </Tooltip.Root>
+                        {:else}
+                            {@render rangeBar(min, max, band, i === 0)}
+                        {/if}
                         <span class="nums text-sm w-9">{fmtTemp(max)}</span>
                     </div>
                     <div class="flex items-center justify-end gap-1.5 pl-0.5">
@@ -241,14 +261,21 @@
                                 >
                                 <WindIcon aria-hidden="true" />
                                 <span aria-hidden="true">{dayBf} Bf</span>
-                                <span
-                                    class="inline-flex"
-                                    aria-hidden="true"
-                                    title={t("wind")}
-                                    style={`transform: rotate(${dayDirDeg ?? 0}deg);`}
-                                >
-                                    <NavigationIcon class="size-3" />
-                                </span>
+                                <Tooltip.Root>
+                                    <Tooltip.Trigger tabindex={-1}>
+                                        {#snippet child({ props })}
+                                            <span
+                                                {...props}
+                                                class="inline-flex"
+                                                aria-hidden="true"
+                                                style={`transform: rotate(${dayDirDeg ?? 0}deg);`}
+                                            >
+                                                <NavigationIcon class="size-3" />
+                                            </span>
+                                        {/snippet}
+                                    </Tooltip.Trigger>
+                                    <Tooltip.Content>{t("wind")}</Tooltip.Content>
+                                </Tooltip.Root>
                             </Badge>
                         {/if}
                         {#if sum >= 0.2 || pop >= 35}
@@ -414,11 +441,18 @@
                                             class={iconColor(hw.icon)}
                                         />
                                         {#if h.precip > 0}
-                                            <span
-                                                class="text-[10px] text-rain nums leading-none"
-                                                title={t("precip")}
-                                                >{fmtMm(h.precip)}</span
-                                            >
+                                            <Tooltip.Root>
+                                                <Tooltip.Trigger tabindex={-1}>
+                                                    {#snippet child({ props })}
+                                                        <span
+                                                            {...props}
+                                                            class="text-[10px] text-rain nums leading-none"
+                                                            >{fmtMm(h.precip)}</span
+                                                        >
+                                                    {/snippet}
+                                                </Tooltip.Trigger>
+                                                <Tooltip.Content>{t("precip")}</Tooltip.Content>
+                                            </Tooltip.Root>
                                         {:else if h.pop >= 20}
                                             <span
                                                 class="text-[10px] text-rain/70 nums leading-none"
