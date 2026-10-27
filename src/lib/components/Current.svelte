@@ -11,13 +11,14 @@
   import { describe, iconColor } from '$lib/wmo';
   import { fmtTemp, compassCode, uvLevel, kmhToBeaufort } from '$lib/format';
   import { t } from '$lib/i18n.svelte';
-  import type { Location, WeatherData } from '$lib/weather';
+  import { todayHighLow, type Location, type WeatherData } from '$lib/weather';
 
   type Props = { data: WeatherData; place: Location | null; saved?: boolean; onToggleSave?: () => void };
   let { data, place, saved = false, onToggleSave }: Props = $props();
 
   const c = $derived(data.current);
   const today = $derived(data.daily);
+  const highLow = $derived(todayHighLow(data));
   const w = $derived(describe(c.weather_code, c.is_day));
   const uv = $derived(uvLevel(today.uv_index_max?.[0]));
   const bf = $derived(kmhToBeaufort(c.wind_speed_10m));
@@ -85,8 +86,8 @@
             <span class="text-muted-foreground/60">·</span>
             <span>{t('feels_like')} <span class="nums text-foreground">{fmtTemp(c.apparent_temperature)}</span></span>
             <span class="text-muted-foreground/60">·</span>
-            <span>{t('high_short')} <span class="nums">{fmtTemp(today.temperature_2m_max?.[0])}</span></span>
-            <span>{t('low_short')} <span class="nums">{fmtTemp(today.temperature_2m_min?.[0])}</span></span>
+            <span>{t('high_short')} <span class="nums">{fmtTemp(highLow.high)}</span></span>
+            <span>{t('low_short')} <span class="nums">{fmtTemp(highLow.low)}</span></span>
           </div>
         </div>
         <div class="shrink-0">

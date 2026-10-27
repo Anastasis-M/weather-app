@@ -23,7 +23,7 @@
         kmhToBeaufort,
     } from "$lib/format";
     import { t, locale } from "$lib/i18n.svelte";
-    import type { WeatherData } from "$lib/weather";
+    import { todayHighLow, type ConsensusVariable, type Spread, type WeatherData } from "$lib/weather";
 
     type Props = { data: WeatherData };
     let { data }: Props = $props();
@@ -40,13 +40,43 @@
         openIdx = open ? i : -1;
     }
 
+    const spreadOf = (variable: ConsensusVariable, day: string): Spread | null =>
+        data.consensus?.[variable]?.[day] ?? null;
+
+    const days = $derived(
+        (daily.time as string[]).map((day, i) => {
+            const minSpread = spreadOf("temperature_2m_min", day);
+            const maxSpread = spreadOf("temperature_2m_max", day);
+            const sumSpread = spreadOf("precipitation_sum", day);
+            const today = i === 0 ? todayHighLow(data) : null;
+            return {
+                min: today?.low ?? minSpread?.median ?? daily.temperature_2m_min[i],
+                max: today?.high ?? maxSpread?.median ?? daily.temperature_2m_max[i],
+                sum: sumSpread?.median ?? daily.precipitation_sum?.[i] ?? 0,
+                band: minSpread && maxSpread ? { low: minSpread.low, high: maxSpread.high } : null,
+                sumSpread,
+            };
+        }),
+    );
+
+    const modelCount = $derived(
+        Math.max(0, ...Object.values(data.consensus?.temperature_2m_max ?? {}).map((s) => (s as Spread).models)),
+    );
+
     const tempRange = $derived.by(() => {
-        const mins = daily.temperature_2m_min as number[];
-        const maxs = daily.temperature_2m_max as number[];
-        const lo = Math.min(...mins);
-        const hi = Math.max(...maxs);
+        const lo = Math.min(...days.map((d) => d.band?.low ?? d.min));
+        const hi = Math.max(...days.map((d) => d.band?.high ?? d.max));
         return { lo, hi, span: Math.max(1, hi - lo) };
     });
+
+    function bandStyle(low: number, high: number): string {
+        const { lo, span } = tempRange;
+        return `left:${((low - lo) / span) * 100}%;width:${((high - low) / span) * 100}%`;
+    }
+
+    const RAIN_DISAGREE_MM = 2;
+    const rainDisagrees = (s: Spread | null) =>
+        !!s && s.high - s.low >= Math.max(RAIN_DISAGREE_MM, s.median);
 
     function barStyle(min: number, max: number): string {
         const { lo, span } = tempRange;
@@ -109,6 +139,14 @@
     }
 </script>
 
+{#snippet rainRange(s: Spread)}
+    <span
+        class="font-normal text-rain/60"
+        title={t("consensus.range", { low: fmtMm(s.low), high: fmtMm(s.high) })}
+        >{Math.round(s.low)}–{Math.round(s.high)}</span
+    >
+{/snippet}
+
 <section
     class="select-none px-5 pb-8 lg:px-0 lg:pb-0 lg:flex lg:min-h-0 lg:flex-none lg:flex-col"
 >
@@ -117,17 +155,22 @@
         class="weather-card gap-0 rounded-lg py-0 lg:min-h-0 lg:flex-1 lg:overflow-hidden"
     >
         <Card.Header class="border-b border-border/70 px-3 pb-2.5! lg:shrink-0">
-            <Card.Title class="section-title">
-                {t("forecast_7d")}
-            </Card.Title>
+            <div class="flex items-baseline justify-between gap-2">
+                <Card.Title class="section-title">
+                    {t("forecast_7d")}
+                </Card.Title>
+                {#if modelCount >= 2}
+                    <span class="text-[11px] text-muted-foreground/70">
+                        {t("consensus.models", { count: modelCount })}
+                    </span>
+                {/if}
+            </div>
         </Card.Header>
         <div class="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
         {#each daily.time as day, i}
             {@const w = describe(daily.weather_code[i], 1)}
-            {@const min = daily.temperature_2m_min[i]}
-            {@const max = daily.temperature_2m_max[i]}
+            {@const { min, max, sum, band, sumSpread } = days[i]}
             {@const pop = daily.precipitation_probability_max?.[i] ?? 0}
-            {@const sum = daily.precipitation_sum?.[i] ?? 0}
             {@const dayBf = kmhToBeaufort(daily.wind_speed_10m_max?.[i])}
             {@const dayDirDeg = daily.wind_direction_10m_dominant?.[i]}
             {@const hasDayDir = dayDirDeg != null}
@@ -138,7 +181,7 @@
                 onOpenChange={(v) => setOpen(i, v)}
             >
                 <Collapsible.Trigger
-                    class="grid w-full cursor-pointer select-none grid-cols-[52px_26px_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 px-3 py-2 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50 active:bg-muted/55 data-[state=open]:bg-muted/30 min-[460px]:min-h-[56px] min-[460px]:py-0 sm:grid-cols-[62px_28px_minmax(0,1fr)_auto] lg:grid-cols-[84px_28px_128px_minmax(0,1fr)_auto] lg:gap-3"
+                    class="grid w-full cursor-pointer select-none grid-cols-[52px_26px_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 px-3 py-2 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50 active:bg-muted/55 data-[state=open]:bg-muted/30 min-[460px]:min-h-[56px] min-[460px]:py-0 sm:grid-cols-[62px_28px_minmax(0,1fr)_auto] lg:grid-cols-[84px_28px_minmax(0,1fr)_auto] lg:gap-3 xl:grid-cols-[84px_28px_128px_minmax(0,1fr)_auto]"
                 >
                     <div>
                         <div
@@ -156,7 +199,7 @@
                     </div>
                     <Icon name={w.icon} size={24} class={iconColor(w.icon)} />
                     <div
-                        class="hidden truncate text-sm text-muted-foreground lg:block"
+                        class="hidden truncate text-sm text-muted-foreground xl:block"
                     >
                         {t(w.labelKey)}
                     </div>
@@ -167,7 +210,16 @@
                         >
                         <div
                             class="relative flex flex-1 h-1.5 rounded-full bg-muted"
+                            title={band
+                                ? t("consensus.range", { low: fmtTemp(band.low), high: fmtTemp(band.high) })
+                                : undefined}
                         >
+                            {#if band}
+                                <span
+                                    class="absolute top-0 h-full rounded-full bg-foreground/15"
+                                    style={bandStyle(band.low, band.high)}
+                                ></span>
+                            {/if}
                             <span
                                 class="absolute top-0 h-full rounded-full"
                                 style={barStyle(min, max)}
@@ -207,7 +259,10 @@
                                 class="nums hidden bg-rain/10 text-rain min-[460px]:inline-flex"
                             >
                                 <CloudRainIcon />
-                                {rainLabel(sum, pop)}
+                                {rainDisagrees(sumSpread) ? fmtMm(sum) : rainLabel(sum, pop)}
+                                {#if rainDisagrees(sumSpread)}
+                                    {@render rainRange(sumSpread!)}
+                                {/if}
                             </Badge>
                         {/if}
                         <ChevronDownIcon
@@ -249,7 +304,10 @@
                         {#if sum >= 0.2 || pop >= 35}
                             <Badge class="nums ml-auto bg-rain/10 text-rain">
                                 <CloudRainIcon />
-                                {rainLabel(sum, pop)}
+                                {rainDisagrees(sumSpread) ? fmtMm(sum) : rainLabel(sum, pop)}
+                                {#if rainDisagrees(sumSpread)}
+                                    {@render rainRange(sumSpread!)}
+                                {/if}
                             </Badge>
                         {/if}
                     </div>

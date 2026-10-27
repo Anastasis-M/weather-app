@@ -111,6 +111,73 @@ async function fetchAirQuality({
   }
 }
 
+const CONSENSUS_MODELS = [
+  "ecmwf_ifs025",
+  "gfs_seamless",
+  "icon_seamless",
+  "meteofrance_seamless",
+  "ukmo_seamless",
+];
+const CONSENSUS_DAILY = ["temperature_2m_max", "temperature_2m_min", "precipitation_sum"] as const;
+
+export type ConsensusVariable = (typeof CONSENSUS_DAILY)[number];
+export type Spread = { median: number; low: number; high: number; models: number };
+export type Consensus = Record<ConsensusVariable, Record<string, Spread>>;
+
+function median(sorted: number[]): number {
+  const mid = sorted.length >> 1;
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+export function parseConsensus(raw: any): Consensus | null {
+  const days: unknown = raw?.daily?.time;
+  if (!Array.isArray(days)) return null;
+  const consensus = {} as Consensus;
+  for (const variable of CONSENSUS_DAILY) {
+    consensus[variable] = {};
+    days.forEach((day, i) => {
+      const values = CONSENSUS_MODELS.map((m) => Number(raw.daily[`${variable}_${m}`]?.[i] ?? NaN))
+        .filter(Number.isFinite)
+        .sort((a, b) => a - b);
+      if (typeof day === "string" && values.length >= 2) {
+        consensus[variable][day] = {
+          median: median(values),
+          low: values[0],
+          high: values[values.length - 1],
+          models: values.length,
+        };
+      }
+    });
+  }
+  return consensus;
+}
+
+async function fetchConsensus(
+  coords: { latitude: number; longitude: number }[],
+  days: number,
+): Promise<(Consensus | null)[]> {
+  const u = new URL(FORECAST_URL);
+  u.searchParams.set("latitude", coords.map((c) => c.latitude).join(","));
+  u.searchParams.set("longitude", coords.map((c) => c.longitude).join(","));
+  u.searchParams.set("daily", CONSENSUS_DAILY.join(","));
+  u.searchParams.set("models", CONSENSUS_MODELS.join(","));
+  u.searchParams.set("timezone", "auto");
+  u.searchParams.set("forecast_days", String(days));
+  const json = await readWeatherJson(await fetchWeatherResponse(u));
+  const list = Array.isArray(json) ? json : [json];
+  return coords.map((_, i) => parseConsensus(list[i]));
+}
+
+export function todayHighLow(data: WeatherData): { high: number; low: number } {
+  const day = data?.daily?.time?.[0];
+  const consensus: Consensus | null = data?.consensus ?? null;
+  const high = consensus?.temperature_2m_max?.[day]?.median ?? Number(data?.daily?.temperature_2m_max?.[0]);
+  const low = consensus?.temperature_2m_min?.[day]?.median ?? Number(data?.daily?.temperature_2m_min?.[0]);
+  const now = Number(data?.current?.temperature_2m);
+  if (!Number.isFinite(now)) return { high, low };
+  return { high: Math.max(high, now), low: Math.min(low, now) };
+}
+
 export async function fetchWeather({
   latitude,
   longitude,
@@ -129,12 +196,13 @@ export async function fetchWeather({
   u.searchParams.set("wind_speed_unit", "kmh");
   u.searchParams.set("temperature_unit", "celsius");
   u.searchParams.set("precipitation_unit", "mm");
-  const [r, airQuality] = await Promise.all([
+  const [r, airQuality, consensus] = await Promise.all([
     fetchWeatherResponse(u),
     fetchAirQuality({ latitude, longitude }).catch(() => null),
+    fetchConsensus([{ latitude, longitude }], 7).then(([c]) => c, () => null),
   ]);
   const weather = await readWeatherJson(r);
-  return { ...weather, airQuality };
+  return { ...weather, airQuality, consensus };
 }
 
 export type PlaceSummary = {
@@ -149,8 +217,7 @@ export type PlaceSummary = {
 export function parseSummary(raw: any, fetchedAt: number): PlaceSummary | null {
   const temp = Number(raw?.current?.temperature_2m);
   const code = Number(raw?.current?.weather_code);
-  const high = Number(raw?.daily?.temperature_2m_max?.[0]);
-  const low = Number(raw?.daily?.temperature_2m_min?.[0]);
+  const { high, low } = todayHighLow(raw);
   if ([temp, code, high, low].some(Number.isNaN)) return null;
   return { temp, code, isDay: raw.current.is_day === 1, high, low, fetchedAt };
 }
@@ -175,10 +242,13 @@ export async function fetchPlaceSummaries(
   u.searchParams.set("daily", "temperature_2m_max,temperature_2m_min");
   u.searchParams.set("forecast_days", "1");
   u.searchParams.set("timezone", "auto");
-  const json = await readWeatherJson(await fetchWeatherResponse(u));
+  const [json, consensus] = await Promise.all([
+    fetchWeatherResponse(u).then(readWeatherJson),
+    fetchConsensus(coords, 1).catch(() => coords.map(() => null)),
+  ]);
   const list = Array.isArray(json) ? json : [json];
   const now = Date.now();
-  return coords.map((_, i) => parseSummary(list[i], now));
+  return coords.map((_, i) => parseSummary({ ...list[i], consensus: consensus[i] }, now));
 }
 
 export async function searchPlaces(
