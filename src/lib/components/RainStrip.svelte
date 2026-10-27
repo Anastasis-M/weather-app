@@ -23,7 +23,7 @@
     max={wettest}
     formatTick={(v) => `${v}mm`}
     showLabel={(_, i) => tickIndexes.has(i)}
-    title={(b) => `${b.label} · ${t("tips.chance")} ${popByHour.get(b.label) ?? 0}%`}
+    title={(b) => t("tips.rain_hour", { hour: b.label, pop: popByHour.get(b.label) ?? 0 })}
     name={t("precip")}
     formatValue={fmtMm}
 />

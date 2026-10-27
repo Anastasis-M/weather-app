@@ -61,8 +61,8 @@
     );
 
     const tempRange = $derived.by(() => {
-        const lo = Math.min(...days.map((d) => d.band?.low ?? d.min));
-        const hi = Math.max(...days.map((d) => d.band?.high ?? d.max));
+        const lo = Math.min(...days.map((d) => Math.min(d.min, d.band?.low ?? d.min)));
+        const hi = Math.max(...days.map((d) => Math.max(d.max, d.band?.high ?? d.max)));
         return { lo, hi, span: Math.max(1, hi - lo) };
     });
 

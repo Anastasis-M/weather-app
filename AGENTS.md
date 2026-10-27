@@ -12,7 +12,7 @@ map and saved places. Deployed on Vercel. Data from Open-Meteo.
 
 - SvelteKit 3 + Svelte 5 (runes) + TypeScript 6 + Vite 8, `adapter-vercel`, `ssr = false`. Config lives in the `sveltekit()` plugin in `vite.config.js`; there is no `svelte.config.js`.
 - Tailwind CSS v4 via the `@tailwindcss/vite` plugin (no PostCSS config, no tailwind.config content pipeline)
-- shadcn-svelte (bits-ui / formsnap / vaul / paneforge), lucide icons
+- shadcn-svelte (bits-ui / vaul), lucide icons
 - OpenLayers (`ol`) + `@openmeteo/weather-map-layer` for the precipitation map
 - layerchart (through shadcn-svelte chart components) for charts
 - Package manager: pnpm

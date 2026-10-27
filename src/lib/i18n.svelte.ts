@@ -65,7 +65,7 @@ const dict = {
     "places.remove_named": "Remove {name}",
     // tips
     "tips.title": "Today's tips",
-    "tips.chance": "Chance of rain",
+    "tips.rain_hour": "{hour} · Chance of rain {pop}%",
     "tips.umbrella": "Take an umbrella",
     "tips.umbrella.detail": "Rain likely {from} to {to}, up to {peak}%, about {total} in total",
     "tips.frost": "Frost tonight",
@@ -248,7 +248,7 @@ const dict = {
     "places.set_home_named": "Ορισμός ως σπίτι: {name}",
     "places.remove_named": "Αφαίρεση: {name}",
     "tips.title": "Συμβουλές για σήμερα",
-    "tips.chance": "Πιθανότητα βροχής",
+    "tips.rain_hour": "{hour} · Πιθανότητα βροχής {pop}%",
     "tips.umbrella": "Πάρτε ομπρέλα",
     "tips.umbrella.detail": "Πιθανή βροχή {from} έως {to}, μέχρι {peak}%, περίπου {total} συνολικά",
     "tips.frost": "Παγετός απόψε",

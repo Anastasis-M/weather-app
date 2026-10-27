@@ -86,8 +86,8 @@
     async function share() {
         if (!place) return;
         const params = new URLSearchParams({
-            lat: String(place.latitude),
-            lon: String(place.longitude),
+            lat: place.latitude.toFixed(2),
+            lon: place.longitude.toFixed(2),
             name: place.shortName,
         });
         const url = `${window.location.origin}/share?${params}`;
