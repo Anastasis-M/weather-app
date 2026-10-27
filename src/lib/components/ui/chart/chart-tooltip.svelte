@@ -88,6 +88,11 @@
 	});
 
 	const nestLabel = $derived(visibleSeries.length === 1 && indicator !== "dot");
+
+	let tooltipWidth = $state(0);
+	const clampedX = $derived(
+		Math.max(0, Math.min(chartCtx.tooltip.x - tooltipWidth / 2, chartCtx.containerWidth - tooltipWidth))
+	);
 </script>
 
 {#snippet TooltipLabel()}
@@ -102,9 +107,10 @@
 	{/if}
 {/snippet}
 
-<TooltipPrimitive.Root variant="none">
+<TooltipPrimitive.Root variant="none" x={clampedX} xOffset={0}>
 	<div
 		bind:this={ref}
+		bind:clientWidth={tooltipWidth}
 		class={cn(
 			"border-border/50 bg-background grid min-w-[9rem] items-start gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs shadow-xl",
 			className
