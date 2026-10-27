@@ -40,6 +40,7 @@ const DAILY = [
   "precipitation_sum",
   "precipitation_probability_max",
   "wind_speed_10m_max",
+  "wind_gusts_10m_max",
   "wind_direction_10m_dominant",
   "uv_index_max",
 ].join(",");
@@ -123,15 +124,40 @@ const CONSENSUS_DAILY = [
   "temperature_2m_min",
   "precipitation_sum",
   "wind_speed_10m_max",
+  "wind_gusts_10m_max",
 ] as const;
+const CONSENSUS_HOURLY = ["temperature_2m", "wind_speed_10m"] as const;
 
 export type ConsensusVariable = (typeof CONSENSUS_DAILY)[number];
+export type ConsensusHourlyVariable = (typeof CONSENSUS_HOURLY)[number];
 export type Spread = { median: number; low: number; high: number; models: number };
-export type Consensus = Record<ConsensusVariable, Record<string, Spread>>;
+export type Consensus = Record<ConsensusVariable, Record<string, Spread>> & {
+  hourly?: Record<ConsensusHourlyVariable, Record<string, number>>;
+};
 
 function median(sorted: number[]): number {
   const mid = sorted.length >> 1;
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+function modelValues(series: any, variable: string, i: number): number[] {
+  return CONSENSUS_MODELS.map((m) => Number(series?.[`${variable}_${m.id}`]?.[i] ?? NaN))
+    .filter(Number.isFinite)
+    .sort((a, b) => a - b);
+}
+
+function parseHourlyMedians(raw: any): Consensus["hourly"] {
+  const times: unknown = raw?.hourly?.time;
+  if (!Array.isArray(times)) return undefined;
+  const hourly = {} as NonNullable<Consensus["hourly"]>;
+  for (const variable of CONSENSUS_HOURLY) {
+    hourly[variable] = {};
+    times.forEach((time, i) => {
+      const values = modelValues(raw.hourly, variable, i);
+      if (typeof time === "string" && values.length >= 2) hourly[variable][time] = median(values);
+    });
+  }
+  return hourly;
 }
 
 export function parseConsensus(raw: any): Consensus | null {
@@ -141,9 +167,7 @@ export function parseConsensus(raw: any): Consensus | null {
   for (const variable of CONSENSUS_DAILY) {
     consensus[variable] = {};
     days.forEach((day, i) => {
-      const values = CONSENSUS_MODELS.map((m) => Number(raw.daily[`${variable}_${m.id}`]?.[i] ?? NaN))
-        .filter(Number.isFinite)
-        .sort((a, b) => a - b);
+      const values = modelValues(raw.daily, variable, i);
       if (typeof day === "string" && values.length >= 2) {
         consensus[variable][day] = {
           median: median(values),
@@ -154,17 +178,21 @@ export function parseConsensus(raw: any): Consensus | null {
       }
     });
   }
+  const hourly = parseHourlyMedians(raw);
+  if (hourly) consensus.hourly = hourly;
   return consensus;
 }
 
 export async function fetchConsensus(
   coords: { latitude: number; longitude: number }[],
   days: number,
+  { hourly = false }: { hourly?: boolean } = {},
 ): Promise<(Consensus | null)[]> {
   const u = new URL(FORECAST_URL);
   u.searchParams.set("latitude", coords.map((c) => c.latitude).join(","));
   u.searchParams.set("longitude", coords.map((c) => c.longitude).join(","));
   u.searchParams.set("daily", CONSENSUS_DAILY.join(","));
+  if (hourly) u.searchParams.set("hourly", CONSENSUS_HOURLY.join(","));
   u.searchParams.set("models", CONSENSUS_MODELS.map((m) => m.id).join(","));
   u.searchParams.set("timezone", "auto");
   u.searchParams.set("forecast_days", String(days));
@@ -186,7 +214,7 @@ export function todayHighLow(data: WeatherData): { high: number; low: number } {
 export function dayForecast(
   data: WeatherData,
   i: number,
-): { min: number; max: number; sum: number; wind: number } {
+): { min: number; max: number; sum: number; wind: number; gusts: number } {
   const day = data?.daily?.time?.[i];
   const consensus: Consensus | null = data?.consensus ?? null;
   const today = i === 0 ? todayHighLow(data) : null;
@@ -195,7 +223,19 @@ export function dayForecast(
     max: today?.high ?? consensus?.temperature_2m_max?.[day]?.median ?? Number(data?.daily?.temperature_2m_max?.[i]),
     sum: consensus?.precipitation_sum?.[day]?.median ?? Number(data?.daily?.precipitation_sum?.[i] ?? 0),
     wind: consensus?.wind_speed_10m_max?.[day]?.median ?? Number(data?.daily?.wind_speed_10m_max?.[i]),
+    gusts: consensus?.wind_gusts_10m_max?.[day]?.median ?? Number(data?.daily?.wind_gusts_10m_max?.[i]),
   };
+}
+
+function withHourlyMedians(hourly: any, medians: Consensus["hourly"]): any {
+  if (!Array.isArray(hourly?.time) || !medians) return hourly;
+  const merged = { ...hourly };
+  for (const variable of CONSENSUS_HOURLY) {
+    merged[variable] = hourly.time.map(
+      (time: string, i: number) => medians[variable]?.[time] ?? hourly[variable]?.[i],
+    );
+  }
+  return merged;
 }
 
 export async function fetchWeather({
@@ -219,10 +259,10 @@ export async function fetchWeather({
   const [r, airQuality, consensus] = await Promise.all([
     fetchWeatherResponse(u),
     fetchAirQuality({ latitude, longitude }).catch(() => null),
-    fetchConsensus([{ latitude, longitude }], 7).then(([c]) => c, () => null),
+    fetchConsensus([{ latitude, longitude }], 7, { hourly: true }).then(([c]) => c, () => null),
   ]);
   const weather = await readWeatherJson(r);
-  return { ...weather, airQuality, consensus };
+  return { ...weather, hourly: withHourlyMedians(weather?.hourly, consensus?.hourly), airQuality, consensus };
 }
 
 export type PlaceSummary = {

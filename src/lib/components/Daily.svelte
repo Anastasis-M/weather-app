@@ -58,9 +58,12 @@
                 band: minSpread && maxSpread ? { low: minSpread.low, high: maxSpread.high } : null,
                 sumSpread,
                 windSpread,
+                models: maxSpread?.models ?? 0,
             };
         }),
     );
+
+    const hasHourlyMedians = $derived(!!data.consensus?.hourly);
 
     const modelCount = $derived(
         Math.max(0, ...Object.values(data.consensus?.temperature_2m_max ?? {}).map((s) => (s as Spread).models)),
@@ -172,6 +175,10 @@
     </Tooltip.Root>
 {/snippet}
 
+{#snippet source(label: string)}
+    <div class="text-[11px] text-muted-foreground/70">{label}</div>
+{/snippet}
+
 {#snippet rangeBar(min: number, max: number, band: { low: number; high: number } | null, isToday: boolean)}
     <div class="relative flex flex-1 h-1.5 rounded-full bg-muted">
         {#if band}
@@ -232,7 +239,7 @@
                                 class="w-72 gap-2 p-3 text-xs"
                             >
                                 <p class="font-medium text-foreground">{t("consensus.info_title")}</p>
-                                <p class="text-muted-foreground">{t("consensus.info_body")}</p>
+                                <p class="text-muted-foreground">{t("consensus.info_median")}</p>
                                 <ul class="grid gap-0.5">
                                     {#each CONSENSUS_MODELS as model (model.id)}
                                         <li class="flex items-center gap-2">
@@ -241,8 +248,9 @@
                                         </li>
                                     {/each}
                                 </ul>
+                                <p class="text-muted-foreground">{t("consensus.info_best_match")}</p>
                                 <p class="text-muted-foreground">{t("consensus.info_range")}</p>
-                                <p class="text-muted-foreground/70">{t("consensus.info_other")}</p>
+                                <p class="text-muted-foreground">{t("consensus.info_wind")}</p>
                             </Popover.Content>
                         </Popover.Root>
                     </div>
@@ -252,7 +260,7 @@
         <div class="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
         {#each daily.time as day, i}
             {@const w = describe(daily.weather_code[i], 1)}
-            {@const { min, max, sum, wind, band, sumSpread, windSpread } = days[i]}
+            {@const { min, max, sum, wind, gusts, band, sumSpread, windSpread, models } = days[i]}
             {@const pop = daily.precipitation_probability_max?.[i] ?? 0}
             {@const dayBf = kmhToBeaufort(wind)}
             {@const dayDirDeg = daily.wind_direction_10m_dominant?.[i]}
@@ -412,36 +420,35 @@
                                 class="weather-card rounded-md px-2.5 py-2 text-xs"
                             >
                                 <span class="text-muted-foreground"
-                                    >{t("precip")}
+                                    >{t("day_total")}
                                 </span>
                                 <span class="nums">{sum.toFixed(1)} mm</span>
-                                <span class="text-muted-foreground">
-                                    · {pop}%</span
-                                >
+                                {#if sumSpread}
+                                    {@render source(t("consensus.models", { count: sumSpread.models }))}
+                                {/if}
+                                <div class="nums mt-1.5 text-muted-foreground">
+                                    {t("rain_chance", { pop })}
+                                </div>
+                                {@render source(t("source.best_match"))}
                             </div>
                             <div
-                                class="weather-card hidden rounded-md px-2.5 py-2 text-xs min-[460px]:block"
+                                class="weather-card rounded-md px-2.5 py-2 text-xs"
                             >
                                 <span class="text-muted-foreground"
                                     >{t("max_wind")}
                                 </span>
                                 <span class="nums">{dayBf} Bf</span>
-                                {#if hasDayDir}
-                                    <span
-                                        class="text-muted-foreground inline-flex items-center"
-                                    >
-                                        ·
-                                        <span
-                                            class="inline-flex ml-1"
-                                            style={`transform: rotate(${dayDirDeg ?? 0}deg);`}
-                                        >
-                                            <NavigationIcon class="size-3" />
-                                        </span>
-                                    </span>
-                                {/if}
                                 <span class="text-muted-foreground">
                                     · {t("bf." + dayBf)}</span
                                 >
+                                {#if Number.isFinite(gusts)}
+                                    <span class="nums text-muted-foreground">
+                                        · {t("gusts", { speed: `${Math.round(gusts)} km/h` })}</span
+                                    >
+                                {/if}
+                                {#if windSpread}
+                                    {@render source(t("consensus.models", { count: windSpread.models }))}
+                                {/if}
                             </div>
                         </div>
                         {#if hours.length > 1}
@@ -451,6 +458,9 @@
                                 <span class="text-muted-foreground"
                                     >{t("temp_trend")}</span
                                 >
+                                {#if hasHourlyMedians && models >= 2}
+                                    {@render source(t("consensus.models", { count: models }))}
+                                {/if}
                                 <TempChart {hours} {tz} />
                             </div>
                         {/if}
@@ -461,6 +471,7 @@
                                 <span class="text-muted-foreground"
                                     >{t("precip")}</span
                                 >
+                                {@render source(t("source.best_match"))}
                                 <PrecipChart {hours} {tz} />
                             </div>
                         {/if}
@@ -534,6 +545,13 @@
                                 {/each}
                             </ul>
                         </ScrollArea>
+                        <div class="mt-1.5 px-0.5">
+                            {@render source(
+                                hasHourlyMedians && models >= 2
+                                    ? t("source.hourly", { count: models })
+                                    : t("source.best_match"),
+                            )}
+                        </div>
                     </div>
                     {/if}
                 </Collapsible.Content>
