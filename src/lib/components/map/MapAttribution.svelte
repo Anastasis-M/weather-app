@@ -1,9 +1,9 @@
 <script lang="ts">
     import InfoIcon from "@lucide/svelte/icons/info";
-    import * as Popover from "$lib/components/ui/popover";
-    import { Button } from "$lib/components/ui/button";
-    import { MAP_ATTRIBUTION } from "$lib/mapLayers";
-    import { t } from "$lib/i18n.svelte";
+    import * as Popover from "#lib/components/ui/popover/index.js";
+    import { Button } from "#lib/components/ui/button/index.js";
+    import { MAP_ATTRIBUTION } from "#lib/mapLayers.js";
+    import { t } from "#lib/i18n.svelte.js";
 
     let { domain }: { domain?: string } = $props();
 

@@ -1,9 +1,9 @@
 <script lang="ts">
     import LoaderIcon from "@lucide/svelte/icons/loader-2";
     import MaximizeIcon from "@lucide/svelte/icons/maximize-2";
-    import { Button } from "$lib/components/ui/button";
-    import type { Location } from "$lib/weather";
-    import { t } from "$lib/i18n.svelte";
+    import { Button } from "#lib/components/ui/button/index.js";
+    import type { Location } from "#lib/weather.js";
+    import { t } from "#lib/i18n.svelte.js";
 
     let {
         place,

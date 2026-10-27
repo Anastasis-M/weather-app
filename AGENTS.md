@@ -10,8 +10,8 @@ map and saved places. Deployed on Vercel. Data from Open-Meteo.
 
 ## Stack
 
-- SvelteKit 2 + Svelte 5 (runes) + TypeScript, `adapter-vercel`, `ssr = false`
-- Tailwind CSS v4 (via `@tailwindcss/postcss`, no tailwind.config content pipeline)
+- SvelteKit 3 + Svelte 5 (runes) + TypeScript 6 + Vite 8, `adapter-vercel`, `ssr = false`. Config lives in the `sveltekit()` plugin in `vite.config.js`; there is no `svelte.config.js`.
+- Tailwind CSS v4 via the `@tailwindcss/vite` plugin (no PostCSS config, no tailwind.config content pipeline)
 - shadcn-svelte (bits-ui / formsnap / vaul / paneforge), lucide icons
 - OpenLayers (`ol`) + `@openmeteo/weather-map-layer` for the precipitation map
 - layerchart (through shadcn-svelte chart components) for charts
@@ -63,6 +63,7 @@ proxy routes.
 ## Conventions
 
 - Svelte 5 runes everywhere (`$state`, `$derived`, `.svelte.ts` for shared reactive state); no legacy stores.
+- Import from `src/lib` through the `#lib/...` subpath import with an explicit extension (`#lib/weather.js`, `#lib/components/ui/button/index.js`). `$lib` is gone in SvelteKit 3.
 - Weather data crosses the API boundary untrusted: parse/normalize in `lib/weather.ts` and the `src/routes/api/*` handlers; internal types stay trusted.
 - WMO condition logic lives only in `lib/wmo.ts`, never inline condition codes in components.
 - Every user-facing string goes through `i18n.svelte.ts` in English and Greek. Use `{name}` placeholders with `t(key, vars)`, never string concatenation. Greek uses the formal plural.

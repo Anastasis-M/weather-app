@@ -1,4 +1,3 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 const header = (request: Request, name: string) => {
@@ -25,7 +24,7 @@ export const GET: RequestHandler = ({ request }) => {
   const country = header(request, 'x-vercel-ip-country');
   const timezone = header(request, 'x-vercel-ip-timezone');
 
-  return json(
+  return Response.json(
     {
       name: [city, country].filter(Boolean).join(', '),
       shortName: city || country,

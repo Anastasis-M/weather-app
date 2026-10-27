@@ -1,12 +1,12 @@
 <script lang="ts">
-  import * as Card from '$lib/components/ui/card';
+  import * as Card from '#lib/components/ui/card/index.js';
   import SunriseIcon from '@lucide/svelte/icons/sunrise';
   import SunsetIcon from '@lucide/svelte/icons/sunset';
-  import { t } from '$lib/i18n.svelte';
-  import { localNowMs, skySpans, sunState } from '$lib/sun';
-  import { describe, type Sky } from '$lib/wmo';
-  import { moonLitPath, moonPhase } from '$lib/moon';
-  import type { WeatherData } from '$lib/weather';
+  import { t } from '#lib/i18n.svelte.js';
+  import { localNowMs, skySpans, sunState } from '#lib/sun.js';
+  import { describe, type Sky } from '#lib/wmo.js';
+  import { moonLitPath, moonPhase } from '#lib/moon.js';
+  import type { WeatherData } from '#lib/weather.js';
 
   type Props = { data: WeatherData };
   let { data }: Props = $props();

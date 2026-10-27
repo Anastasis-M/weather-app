@@ -1,8 +1,14 @@
+import adapter from '@sveltejs/adapter-vercel';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { sveltekit } from '@sveltejs/kit/vite';
+import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  plugins: [sveltekit()],
+  plugins: [
+    tailwindcss(),
+    sveltekit({ preprocess: vitePreprocess(), adapter: adapter() })
+  ],
   server: { host: true },
   // No ssr.noExternal: every map code path is client-only (dynamic import
   // behind ssr=false), and bundling it server-side balloons the function.

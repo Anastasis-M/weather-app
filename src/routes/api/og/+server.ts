@@ -1,7 +1,7 @@
 import { ImageResponse } from '@vercel/og';
-import { describe } from '$lib/wmo';
-import { fmtMm } from '$lib/format';
-import { dayForecast, fetchConsensus } from '$lib/weather';
+import { describe } from '#lib/wmo.js';
+import { fmtMm } from '#lib/format.js';
+import { dayForecast, fetchConsensus } from '#lib/weather.js';
 import type { RequestHandler } from './$types';
 
 // English WMO labels — duplicated from /share to keep this endpoint

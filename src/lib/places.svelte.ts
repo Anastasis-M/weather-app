@@ -7,7 +7,7 @@ import {
   type Location,
   type PlaceSummary,
   type WeatherData,
-} from "$lib/weather";
+} from "#lib/weather.js";
 
 export type SavedPlace = Location & { id: string };
 

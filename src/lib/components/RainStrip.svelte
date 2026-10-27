@@ -1,8 +1,8 @@
 <script lang="ts">
     import HourBars from "./HourBars.svelte";
-    import { t } from "$lib/i18n.svelte";
-    import { fmtMm } from "$lib/format";
-    import type { RainHour } from "$lib/tips";
+    import { t } from "#lib/i18n.svelte.js";
+    import { fmtMm } from "#lib/format.js";
+    import type { RainHour } from "#lib/tips.js";
 
     type Props = { hours: RainHour[] };
     let { hours }: Props = $props();

@@ -4,13 +4,13 @@
   import GripIcon from '@lucide/svelte/icons/grip-vertical';
   import HouseIcon from '@lucide/svelte/icons/house';
   import TrashIcon from '@lucide/svelte/icons/trash-2';
-  import * as Drawer from '$lib/components/ui/drawer';
-  import { Button } from '$lib/components/ui/button';
-  import { describe, iconColor } from '$lib/wmo';
-  import { fmtTemp } from '$lib/format';
-  import { t } from '$lib/i18n.svelte';
-  import { MAX_PLACES, movePlace, places, setHome } from '$lib/places.svelte';
-  import { removeWithUndo } from '$lib/placeToasts';
+  import * as Drawer from '#lib/components/ui/drawer/index.js';
+  import { Button } from '#lib/components/ui/button/index.js';
+  import { describe, iconColor } from '#lib/wmo.js';
+  import { fmtTemp } from '#lib/format.js';
+  import { t } from '#lib/i18n.svelte.js';
+  import { MAX_PLACES, movePlace, places, setHome } from '#lib/places.svelte.js';
+  import { removeWithUndo } from '#lib/placeToasts.js';
 
   let { open = $bindable(false) }: { open?: boolean } = $props();
 

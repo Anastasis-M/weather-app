@@ -1,5 +1,5 @@
-import { kmhToBeaufort } from '$lib/format';
-import { isPrecipitation, SUNNY_CODES } from '$lib/wmo';
+import { kmhToBeaufort } from '#lib/format.js';
+import { isPrecipitation, SUNNY_CODES } from '#lib/wmo.js';
 
 export type TipHourly = {
   time: string[];

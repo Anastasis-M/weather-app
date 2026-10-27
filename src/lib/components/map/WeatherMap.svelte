@@ -7,7 +7,7 @@
     import Overlay from "ol/Overlay.js";
     import { fromLonLat, transformExtent } from "ol/proj.js";
     import LoaderIcon from "@lucide/svelte/icons/loader-2";
-    import { Button } from "$lib/components/ui/button";
+    import { Button } from "#lib/components/ui/button/index.js";
     import MapControls from "./MapControls.svelte";
     import MapAttribution from "./MapAttribution.svelte";
     import MapLegend from "./MapLegend.svelte";
@@ -21,10 +21,10 @@
         viewportAround,
         weatherSource,
         type Bounds,
-    } from "$lib/mapLayers";
-    import { FramePlayer, type Slot } from "$lib/mapPlayer.svelte";
-    import type { Location } from "$lib/weather";
-    import { t } from "$lib/i18n.svelte";
+    } from "#lib/mapLayers.js";
+    import { FramePlayer, type Slot } from "#lib/mapPlayer.svelte.js";
+    import type { Location } from "#lib/weather.js";
+    import { t } from "#lib/i18n.svelte.js";
 
     let {
         place,

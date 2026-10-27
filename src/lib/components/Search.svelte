@@ -4,12 +4,12 @@
     import MapPinIcon from "@lucide/svelte/icons/map-pin";
     import LoaderIcon from "@lucide/svelte/icons/loader-2";
     import StarIcon from "@lucide/svelte/icons/star";
-    import { isSaved } from "$lib/places.svelte";
-    import { toggleSaved } from "$lib/placeToasts";
-    import * as Command from "$lib/components/ui/command";
-    import * as InputGroup from "$lib/components/ui/input-group";
-    import { searchPlaces, type Location, type Place } from "$lib/weather";
-    import { i18n, t } from "$lib/i18n.svelte";
+    import { isSaved } from "#lib/places.svelte.js";
+    import { toggleSaved } from "#lib/placeToasts.js";
+    import * as Command from "#lib/components/ui/command/index.js";
+    import * as InputGroup from "#lib/components/ui/input-group/index.js";
+    import { searchPlaces, type Location, type Place } from "#lib/weather.js";
+    import { i18n, t } from "#lib/i18n.svelte.js";
 
     type Props = {
         onSelect?: (loc: Location) => void;

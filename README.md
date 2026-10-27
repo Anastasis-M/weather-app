@@ -19,7 +19,7 @@ All weather data comes from [Open-Meteo](https://open-meteo.com). No API keys ar
 
 ## Stack
 
-- SvelteKit 2 with Svelte 5 runes and TypeScript, deployed with `adapter-vercel`. Pages render in the browser (`ssr = false`). A few server routes handle share pages, preview images and IP location.
+- SvelteKit 3 with Svelte 5 runes and TypeScript, deployed with `adapter-vercel`. Pages render in the browser (`ssr = false`). A few server routes handle share pages, preview images and IP location.
 - Tailwind CSS 4, shadcn-svelte (bits-ui, vaul) and lucide icons.
 - Charts with layerchart through shadcn-svelte's chart components.
 - OpenLayers with `@openmeteo/weather-map-layer` for the precipitation map, on an Esri dark gray basemap.

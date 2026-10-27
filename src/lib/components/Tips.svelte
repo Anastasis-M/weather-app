@@ -8,13 +8,13 @@
   import WashingMachineIcon from '@lucide/svelte/icons/washing-machine';
   import ThermometerSunIcon from '@lucide/svelte/icons/thermometer-sun';
   import SnowflakeIcon from '@lucide/svelte/icons/snowflake';
-  import * as Card from '$lib/components/ui/card';
-  import { Separator } from '$lib/components/ui/separator';
+  import * as Card from '#lib/components/ui/card/index.js';
+  import { Separator } from '#lib/components/ui/separator/index.js';
   import RainStrip from './RainStrip.svelte';
-  import { fmtMm } from '$lib/format';
-  import { t } from '$lib/i18n.svelte';
-  import { todayTips, type TipKind } from '$lib/tips';
-  import type { WeatherData } from '$lib/weather';
+  import { fmtMm } from '#lib/format.js';
+  import { t } from '#lib/i18n.svelte.js';
+  import { todayTips, type TipKind } from '#lib/tips.js';
+  import type { WeatherData } from '#lib/weather.js';
 
   type Props = { data: WeatherData };
   let { data }: Props = $props();

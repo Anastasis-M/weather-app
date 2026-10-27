@@ -1,9 +1,9 @@
 <script lang="ts">
     import { AreaChart, Area } from "layerchart";
-    import * as Chart from "$lib/components/ui/chart";
-    import { tempColor } from "$lib/tempScale";
-    import { fmtHour } from "$lib/format";
-    import { t, locale } from "$lib/i18n.svelte";
+    import * as Chart from "#lib/components/ui/chart/index.js";
+    import { tempColor } from "#lib/tempScale.js";
+    import { fmtHour } from "#lib/format.js";
+    import { t, locale } from "#lib/i18n.svelte.js";
 
     type Hour = { time: string; temp: number };
     type Props = { hours: Hour[]; tz: string };

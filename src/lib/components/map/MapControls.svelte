@@ -2,8 +2,8 @@
     import type OlMap from "ol/Map.js";
     import PlusIcon from "@lucide/svelte/icons/plus";
     import MinusIcon from "@lucide/svelte/icons/minus";
-    import { Button } from "$lib/components/ui/button";
-    import { t } from "$lib/i18n.svelte";
+    import { Button } from "#lib/components/ui/button/index.js";
+    import { t } from "#lib/i18n.svelte.js";
 
     let {
         map,

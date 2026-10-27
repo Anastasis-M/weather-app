@@ -2,17 +2,17 @@
     import Icon from "./Icon.svelte";
     import PrecipChart from "./PrecipChart.svelte";
     import TempChart from "./TempChart.svelte";
-    import { tempGradient } from "$lib/tempScale";
+    import { tempGradient } from "#lib/tempScale.js";
     import ChevronDownIcon from "@lucide/svelte/icons/chevron-down";
     import NavigationIcon from "@lucide/svelte/icons/navigation";
     import WindIcon from "@lucide/svelte/icons/wind";
     import CloudRainIcon from "@lucide/svelte/icons/cloud-rain";
-    import * as Card from "$lib/components/ui/card";
-    import { Badge } from "$lib/components/ui/badge";
-    import * as Collapsible from "$lib/components/ui/collapsible";
-    import { Separator } from "$lib/components/ui/separator";
-    import { ScrollArea } from "$lib/components/ui/scroll-area";
-    import { describe, iconColor } from "$lib/wmo";
+    import * as Card from "#lib/components/ui/card/index.js";
+    import { Badge } from "#lib/components/ui/badge/index.js";
+    import * as Collapsible from "#lib/components/ui/collapsible/index.js";
+    import { Separator } from "#lib/components/ui/separator/index.js";
+    import { ScrollArea } from "#lib/components/ui/scroll-area/index.js";
+    import { describe, iconColor } from "#lib/wmo.js";
     import {
         fmtTemp,
         fmtHour,
@@ -21,9 +21,9 @@
         fmtMm,
         isSameYMD,
         kmhToBeaufort,
-    } from "$lib/format";
-    import { t, locale } from "$lib/i18n.svelte";
-    import { dayForecast, type ConsensusVariable, type Spread, type WeatherData } from "$lib/weather";
+    } from "#lib/format.js";
+    import { t, locale } from "#lib/i18n.svelte.js";
+    import { dayForecast, type ConsensusVariable, type Spread, type WeatherData } from "#lib/weather.js";
 
     type Props = { data: WeatherData };
     let { data }: Props = $props();

@@ -1,7 +1,7 @@
 <script lang="ts">
     import HourBars from "./HourBars.svelte";
-    import { t, locale } from "$lib/i18n.svelte";
-    import { fmtHour, fmtMm } from "$lib/format";
+    import { t, locale } from "#lib/i18n.svelte.js";
+    import { fmtHour, fmtMm } from "#lib/format.js";
 
     type Hour = { time: string; precip: number; pop: number };
     type Props = { hours: Hour[]; tz: string };

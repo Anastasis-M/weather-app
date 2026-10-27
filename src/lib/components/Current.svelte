@@ -6,12 +6,12 @@
   import SunMediumIcon from '@lucide/svelte/icons/sun-medium';
   import GaugeIcon from '@lucide/svelte/icons/gauge';
   import StarIcon from '@lucide/svelte/icons/star';
-  import { Button } from '$lib/components/ui/button';
-  import * as Card from '$lib/components/ui/card';
-  import { describe, iconColor } from '$lib/wmo';
-  import { fmtTemp, compassCode, uvLevel, kmhToBeaufort } from '$lib/format';
-  import { t } from '$lib/i18n.svelte';
-  import { todayHighLow, type Location, type WeatherData } from '$lib/weather';
+  import { Button } from '#lib/components/ui/button/index.js';
+  import * as Card from '#lib/components/ui/card/index.js';
+  import { describe, iconColor } from '#lib/wmo.js';
+  import { fmtTemp, compassCode, uvLevel, kmhToBeaufort } from '#lib/format.js';
+  import { t } from '#lib/i18n.svelte.js';
+  import { todayHighLow, type Location, type WeatherData } from '#lib/weather.js';
 
   type Props = { data: WeatherData; place: Location | null; saved?: boolean; onToggleSave?: () => void };
   let { data, place, saved = false, onToggleSave }: Props = $props();

@@ -2,10 +2,10 @@
     import "../app.css";
     import "@fontsource-variable/inter";
     import { onMount } from "svelte";
-    import { dev } from "$app/environment";
+    import { dev } from '$app/env';
     import { updated } from "$app/state";
-    import { Toaster } from "$lib/components/ui/sonner";
-    import { TooltipProvider } from "$lib/components/ui/tooltip";
+    import { Toaster } from "#lib/components/ui/sonner/index.js";
+    import { TooltipProvider } from "#lib/components/ui/tooltip/index.js";
 
     let { children } = $props();
 

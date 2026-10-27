@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { PRECIP_SCALE } from "$lib/mapLayers";
-    import { t } from "$lib/i18n.svelte";
+    import { PRECIP_SCALE } from "#lib/mapLayers.js";
+    import { t } from "#lib/i18n.svelte.js";
 
     const stops = $derived.by(() => {
         if (PRECIP_SCALE.type !== "breakpoint") return [];

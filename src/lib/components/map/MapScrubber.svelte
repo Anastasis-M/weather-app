@@ -2,10 +2,10 @@
     import PlayIcon from "@lucide/svelte/icons/play";
     import PauseIcon from "@lucide/svelte/icons/pause";
     import LoaderIcon from "@lucide/svelte/icons/loader-2";
-    import { Button } from "$lib/components/ui/button";
-    import { Slider } from "$lib/components/ui/slider";
-    import type { FramePlayer } from "$lib/mapPlayer.svelte";
-    import { t, locale } from "$lib/i18n.svelte";
+    import { Button } from "#lib/components/ui/button/index.js";
+    import { Slider } from "#lib/components/ui/slider/index.js";
+    import type { FramePlayer } from "#lib/mapPlayer.svelte.js";
+    import { t, locale } from "#lib/i18n.svelte.js";
 
     let {
         player,

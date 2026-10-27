@@ -7,7 +7,7 @@ import {
   type Bounds,
   type FrameSet,
   type MapLayerKind,
-} from "$lib/mapLayers";
+} from "#lib/mapLayers.js";
 
 export type Slot = "a" | "b";
 

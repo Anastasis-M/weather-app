@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { replaceState } from "$app/navigation";
+    import { goto } from "$app/navigation";
     import { toast } from "svelte-sonner";
     import LanguagesIcon from "@lucide/svelte/icons/languages";
     import RefreshIcon from "@lucide/svelte/icons/refresh-cw";
@@ -10,19 +10,19 @@
     import SunIcon from "@lucide/svelte/icons/sun";
     import LoaderIcon from "@lucide/svelte/icons/loader-2";
     import MapIcon from "@lucide/svelte/icons/map";
-    import Search from "$lib/components/Search.svelte";
-    import MapDialog from "$lib/components/map/MapDialog.svelte";
-    import MapCard from "$lib/components/map/MapCard.svelte";
-    import Current from "$lib/components/Current.svelte";
-    import Daily from "$lib/components/Daily.svelte";
-    import Tips from "$lib/components/Tips.svelte";
-    import SavedPlaces from "$lib/components/SavedPlaces.svelte";
-    import SunArc from "$lib/components/SunArc.svelte";
-    import { Button } from "$lib/components/ui/button";
-    import { Badge } from "$lib/components/ui/badge";
-    import * as Alert from "$lib/components/ui/alert";
-    import * as Tooltip from "$lib/components/ui/tooltip";
-    import { Skeleton } from "$lib/components/ui/skeleton";
+    import Search from "#lib/components/Search.svelte";
+    import MapDialog from "#lib/components/map/MapDialog.svelte";
+    import MapCard from "#lib/components/map/MapCard.svelte";
+    import Current from "#lib/components/Current.svelte";
+    import Daily from "#lib/components/Daily.svelte";
+    import Tips from "#lib/components/Tips.svelte";
+    import SavedPlaces from "#lib/components/SavedPlaces.svelte";
+    import SunArc from "#lib/components/SunArc.svelte";
+    import { Button } from "#lib/components/ui/button/index.js";
+    import { Badge } from "#lib/components/ui/badge/index.js";
+    import * as Alert from "#lib/components/ui/alert/index.js";
+    import * as Tooltip from "#lib/components/ui/tooltip/index.js";
+    import { Skeleton } from "#lib/components/ui/skeleton/index.js";
     import {
         fetchWeather,
         getCurrentPosition,
@@ -34,9 +34,9 @@
         maxRainChanceAhead,
         type Location,
         type WeatherData,
-    } from "$lib/weather";
-    import { i18n, t, locale, initLang, toggleLang } from "$lib/i18n.svelte";
-    import { fmtAge } from "$lib/format";
+    } from "#lib/weather.js";
+    import { i18n, t, locale, initLang, toggleLang } from "#lib/i18n.svelte.js";
+    import { fmtAge } from "#lib/format.js";
     import {
         initPlaces,
         homePlace,
@@ -44,8 +44,8 @@
         refreshPlaces,
         isSaved,
         updateSummaryFromForecast,
-    } from "$lib/places.svelte";
-    import { toggleSaved } from "$lib/placeToasts";
+    } from "#lib/places.svelte.js";
+    import { toggleSaved } from "#lib/placeToasts.js";
 
     let place = $state<Location | null>(null);
     let data = $state<WeatherData | null>(null);
@@ -66,9 +66,9 @@
     );
     let loadingMessage = $derived(
         [
-            loadingLocation
-                ? `${t("loading_location")} ${loadingLocation.shortName}`
-                : t("loading"),
+        loadingLocation
+            ? `${t("loading_location")} ${loadingLocation.shortName}`
+            : t("loading"),
             showingCachedAt != null &&
                 fmtAge(Date.now() - showingCachedAt, locale()),
         ]
@@ -233,7 +233,7 @@
                 lon: String(loc.longitude),
                 name: loc.shortName,
             });
-            replaceState(`?${p}`, {});
+            goto(`?${p}`, { shallow: true, replace: true });
         } catch (e: any) {
             if (requestId !== loadRequestId) return;
             // Offline / network blip — render the last saved forecast so the
@@ -474,7 +474,7 @@
                                 variant="outline"
                                 size="icon"
                                 class="pressable h-11 w-11 rounded-md text-muted-foreground"
-                                onclick={() => (mapOpen = true)}
+                                onclick={() => mapOpen = true}
                                 aria-label={t("map.title")}
                             >
                                 <MapIcon class="size-4.5" />
@@ -612,26 +612,26 @@
         >
             <div class="no-scrollbar lg:h-full lg:min-h-0 lg:overflow-y-auto lg:p-px">
                 <Current
-                    {data}
-                    {place}
+                    data={data}
+                    place={place}
                     saved={place ? isSaved(place) : false}
                     onToggleSave={() => place && toggleSaved(place)}
                 />
-                <Tips {data} />
-                <SunArc {data} />
+                <Tips data={data} />
+                <SunArc data={data} />
             </div>
             <div
                 class="no-scrollbar lg:flex lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-col lg:overflow-y-auto lg:p-px"
             >
-                <Daily {data} />
+                <Daily data={data} />
                 {#if place && showMap}
                     <div
                         class="weather-card mt-3 hidden min-h-[220px] flex-1 overflow-hidden rounded-lg lg:block"
                     >
                         <MapCard
-                            {place}
+                            place={place}
                             active={!mapOpen}
-                            onexpand={() => (mapOpen = true)}
+                            onexpand={() => mapOpen = true}
                         />
                     </div>
                 {/if}
@@ -658,5 +658,5 @@
 </main>
 
 {#if place}
-    <MapDialog bind:open={mapOpen} {place} />
+    <MapDialog bind:open={mapOpen} place={place} />
 {/if}

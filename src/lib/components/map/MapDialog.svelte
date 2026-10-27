@@ -1,10 +1,10 @@
 <script lang="ts">
-    import * as Dialog from "$lib/components/ui/dialog";
-    import { Button } from "$lib/components/ui/button";
+    import * as Dialog from "#lib/components/ui/dialog/index.js";
+    import { Button } from "#lib/components/ui/button/index.js";
     import LoaderIcon from "@lucide/svelte/icons/loader-2";
     import XIcon from "@lucide/svelte/icons/x";
-    import type { Location } from "$lib/weather";
-    import { t } from "$lib/i18n.svelte";
+    import type { Location } from "#lib/weather.js";
+    import { t } from "#lib/i18n.svelte.js";
 
     let {
         open = $bindable(false),

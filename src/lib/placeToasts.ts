@@ -1,7 +1,7 @@
 import { toast } from "svelte-sonner";
-import { t } from "$lib/i18n.svelte";
-import { MAX_PLACES, isSaved, placeId, removePlace, savePlace, undoRemove } from "$lib/places.svelte";
-import type { Location } from "$lib/weather";
+import { t } from "#lib/i18n.svelte.js";
+import { MAX_PLACES, isSaved, placeId, removePlace, savePlace, undoRemove } from "#lib/places.svelte.js";
+import type { Location } from "#lib/weather.js";
 
 const UNDO_TOAST_MS = 6000;
 

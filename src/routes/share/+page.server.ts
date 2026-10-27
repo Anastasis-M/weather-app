@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { describe } from '$lib/wmo';
+import { describe } from '#lib/wmo.js';
 
 // English WMO labels (mirrors the en dict in i18n.svelte.ts, safe to use server-side)
 const WMO_EN: Record<string, string> = {

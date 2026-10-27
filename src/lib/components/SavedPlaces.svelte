@@ -8,12 +8,12 @@
   import PencilIcon from '@lucide/svelte/icons/pencil';
   import XIcon from '@lucide/svelte/icons/x';
   import ManagePlaces from './ManagePlaces.svelte';
-  import { Skeleton } from '$lib/components/ui/skeleton';
-  import { describe, iconColor } from '$lib/wmo';
-  import { fmtAge, fmtTemp } from '$lib/format';
-  import { t, locale } from '$lib/i18n.svelte';
-  import { MAX_PLACES, placeId, places } from '$lib/places.svelte';
-  import type { Location, PlaceSummary } from '$lib/weather';
+  import { Skeleton } from '#lib/components/ui/skeleton/index.js';
+  import { describe, iconColor } from '#lib/wmo.js';
+  import { fmtAge, fmtTemp } from '#lib/format.js';
+  import { t, locale } from '#lib/i18n.svelte.js';
+  import { MAX_PLACES, placeId, places } from '#lib/places.svelte.js';
+  import type { Location, PlaceSummary } from '#lib/weather.js';
 
   type Props = {
     activeId: string | null;
