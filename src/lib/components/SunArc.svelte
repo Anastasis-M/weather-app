@@ -55,6 +55,10 @@
   const skyStroke = (sky: Sky) =>
     sky === 'wet' ? 'var(--color-rain)' : sky === 'cloudy' ? 'var(--color-sub)' : night ? 'var(--color-snow)' : 'var(--color-warn)';
   const skyOpacity = (sky: Sky) => (sky === 'partly' ? 0.55 : 1);
+  const skyFill = (sky: Sky) =>
+    sky === 'wet' ? 'url(#rain-sky)' : sky === 'cloudy' ? 'url(#cloud-sky)' : night ? 'url(#moon-sky)' : 'url(#sun-sky)';
+  const slice = (from: number, to: number) =>
+    `${arc(to, from)} L${point(to).x.toFixed(1)},${BASE} L${point(from).x.toFixed(1)},${BASE} Z`;
 
   const spans = $derived(sun ? skySpans(sun, data.hourly?.time ?? [], data.hourly?.weather_code ?? []) : []);
   const strokes = $derived(
@@ -65,6 +69,11 @@
       if (s.to > progress) pieces.push({ d: arc(s.to, Math.max(s.from, progress)), opacity: skyOpacity(s.sky) });
       return pieces.map((p) => ({ ...p, color: skyStroke(s.sky), label }));
     }),
+  );
+  const fills = $derived(
+    spans
+      .filter((s) => s.from < progress)
+      .map((s) => ({ d: slice(s.from, Math.min(s.to, progress)), fill: skyFill(s.sky), opacity: skyOpacity(s.sky) })),
   );
   const skyNow = $derived(spans.find((s) => s.from <= progress && progress < s.to)?.sky ?? 'clear');
   const dimmed = $derived(skyNow === 'cloudy' || skyNow === 'wet');
@@ -112,11 +121,19 @@
             : t('sun.position')}
         >
           <defs>
-            <linearGradient id="sun-sky" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="sun-sky" gradientUnits="userSpaceOnUse" x1="0" y1={BASE - RY} x2="0" y2={BASE}>
               <stop offset="0%" stop-color="var(--color-warn)" stop-opacity="0.32" />
               <stop offset="100%" stop-color="var(--color-warn)" stop-opacity="0" />
             </linearGradient>
-            <linearGradient id="moon-sky" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="cloud-sky" gradientUnits="userSpaceOnUse" x1="0" y1={BASE - RY} x2="0" y2={BASE}>
+              <stop offset="0%" stop-color="var(--color-sub)" stop-opacity="0.24" />
+              <stop offset="100%" stop-color="var(--color-sub)" stop-opacity="0" />
+            </linearGradient>
+            <linearGradient id="rain-sky" gradientUnits="userSpaceOnUse" x1="0" y1={BASE - RY} x2="0" y2={BASE}>
+              <stop offset="0%" stop-color="var(--color-rain)" stop-opacity="0.3" />
+              <stop offset="100%" stop-color="var(--color-rain)" stop-opacity="0" />
+            </linearGradient>
+            <linearGradient id="moon-sky" gradientUnits="userSpaceOnUse" x1="0" y1={BASE - RY} x2="0" y2={BASE}>
               <stop offset="0%" stop-color="var(--color-snow)" stop-opacity="0.16" />
               <stop offset="100%" stop-color="var(--color-snow)" stop-opacity="0" />
             </linearGradient>
@@ -131,7 +148,11 @@
           </defs>
           <path d={arc(1)} fill="none" stroke="var(--color-line)" stroke-width="1.5" stroke-dasharray="3 5" stroke-linecap="round" />
           <line x1="6" x2={W - 6} y1={BASE} y2={BASE} stroke="var(--color-line)" stroke-width="1" />
-          <path d={fill} fill={night ? 'url(#moon-sky)' : 'url(#sun-sky)'} />
+          {#each fills as f}
+            <path d={f.d} fill={f.fill} fill-opacity={f.opacity} />
+          {:else}
+            <path d={fill} fill={night ? 'url(#moon-sky)' : 'url(#sun-sky)'} />
+          {/each}
           {#each strokes as s}
             <path d={s.d} fill="none" stroke={s.color} stroke-opacity={s.opacity} stroke-width="2.5">
               <title>{s.label}</title>
