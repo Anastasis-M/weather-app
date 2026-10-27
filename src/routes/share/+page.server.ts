@@ -1,3 +1,4 @@
+import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { describe } from '#lib/wmo.js';
 
@@ -32,54 +33,58 @@ const WMO_EN: Record<string, string> = {
 // Cap name length to bound rendering / OG tag size and reject obviously
 // bogus inputs before they reach Open-Meteo.
 const NAME_MAX = 100;
+const UPSTREAM_TIMEOUT_MS = 10_000;
 
-function validParams(lat: number, lon: number, name: string) {
-  return (
-    Number.isFinite(lat) &&
-    Number.isFinite(lon) &&
-    lat >= -90 &&
-    lat <= 90 &&
-    lon >= -180 &&
-    lon <= 180 &&
-    name.length > 0 &&
-    name.length <= NAME_MAX
-  );
+// Cache at Vercel's edge — prevents cost amplification if the endpoint is
+// spammed, since each miss would otherwise fan out to Open-Meteo.
+const CACHE_OK = 'public, max-age=300, s-maxage=300';
+const CACHE_UPSTREAM_ERROR = 'public, max-age=60, s-maxage=60';
+
+const coord = (n: number) => (Number(n.toFixed(2)) || 0).toFixed(2);
+
+function canonicalParams(params: URLSearchParams) {
+  const lat = parseFloat(params.get('lat') ?? '');
+  const lon = parseFloat(params.get('lon') ?? '');
+  const name = Array.from((params.get('name') ?? '').trim()).slice(0, NAME_MAX).join('').trim();
+  if (!(lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180 && name)) return null;
+  return { lat: coord(lat), lon: coord(lon), name };
 }
 
 export const load: PageServerLoad = async ({ url, setHeaders }) => {
-  const lat = parseFloat(url.searchParams.get('lat') ?? '');
-  const lon = parseFloat(url.searchParams.get('lon') ?? '');
-  const name = (url.searchParams.get('name') ?? '').slice(0, NAME_MAX);
+  const params = canonicalParams(url.searchParams);
+  if (!params) {
+    setHeaders({ 'cache-control': CACHE_OK });
+    return { valid: false as const, name: '', city: '', lat: '', lon: '', origin: url.origin };
+  }
+  const { lat, lon, name } = params;
+
+  const canonical = new URL(`?${new URLSearchParams({ lat, lon, name })}`, url);
+  if (canonical.search !== url.search) redirect(308, canonical.pathname + canonical.search);
 
   // City is the first segment before a comma — used in OG title
   const city = name.split(',')[0].trim() || name;
 
-  // Cache at Vercel's edge for 5 min — prevents cost amplification if the
-  // endpoint is spammed, since each miss would otherwise fan out to Open-Meteo.
-  setHeaders({ 'cache-control': 'public, max-age=300, s-maxage=300' });
-
-  if (!validParams(lat, lon, name)) {
-    return { valid: false as const, name: '', city: '', lat: 0, lon: 0, origin: url.origin };
-  }
-
   try {
     const apiUrl = new URL('https://api.open-meteo.com/v1/forecast');
-    apiUrl.searchParams.set('latitude', String(lat));
-    apiUrl.searchParams.set('longitude', String(lon));
+    apiUrl.searchParams.set('latitude', lat);
+    apiUrl.searchParams.set('longitude', lon);
     apiUrl.searchParams.set('current', 'temperature_2m,weather_code,precipitation');
     apiUrl.searchParams.set('timezone', 'auto');
 
-    const r = await fetch(apiUrl);
+    const r = await fetch(apiUrl, { signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS) });
     if (!r.ok) throw new Error('weather fetch failed');
     const w = await r.json();
+    if (!w?.current) throw new Error('unexpected weather shape');
 
     const temp = Math.round(w.current.temperature_2m);
     const code = w.current.weather_code;
     const precip: number = w.current.precipitation ?? 0;
     const condition = WMO_EN[describe(code, 1).labelKey] ?? 'Weather';
 
+    setHeaders({ 'cache-control': CACHE_OK });
     return { valid: true as const, name, city, lat, lon, temp, condition, precip, origin: url.origin };
   } catch {
+    setHeaders({ 'cache-control': CACHE_UPSTREAM_ERROR });
     return { valid: false as const, name, city, lat, lon, origin: url.origin };
   }
 };

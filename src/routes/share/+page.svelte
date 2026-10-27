@@ -16,12 +16,12 @@
     // Falls back to the app icon when params are missing.
     const ogImage = $derived(
         data.valid
-            ? `${data.origin}/api/og?lat=${data.lat}&lon=${data.lon}&name=${encodeURIComponent(data.name)}`
+            ? `${data.origin}/api/og?${new URLSearchParams({ lat: data.lat, lon: data.lon, name: data.name })}`
             : `${data.origin}/icon-192.png`,
     );
     const ogUrl = $derived(
         data.valid
-            ? `${data.origin}/share?lat=${data.lat}&lon=${data.lon}&name=${encodeURIComponent(data.name)}`
+            ? `${data.origin}/share?${new URLSearchParams({ lat: data.lat, lon: data.lon, name: data.name })}`
             : data.origin
     );
 

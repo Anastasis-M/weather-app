@@ -1,3 +1,4 @@
+import { redirect } from '@sveltejs/kit';
 import { ImageResponse } from '@vercel/og';
 import { describe } from '#lib/wmo.js';
 import { fmtMm } from '#lib/format.js';
@@ -75,33 +76,32 @@ const el = (style: Record<string, any>, children: any = null): El => ({
 // Cap to keep rendering bounded and reject obviously-bogus inputs before
 // they reach Open-Meteo or Satori.
 const NAME_MAX = 100;
+const UPSTREAM_TIMEOUT_MS = 10_000;
 
-function validParams(lat: number, lon: number, name: string) {
-  return (
-    Number.isFinite(lat) &&
-    Number.isFinite(lon) &&
-    lat >= -90 &&
-    lat <= 90 &&
-    lon >= -180 &&
-    lon <= 180 &&
-    name.length > 0 &&
-    name.length <= NAME_MAX
-  );
+const coord = (n: number) => (Number(n.toFixed(2)) || 0).toFixed(2);
+
+function canonicalParams(params: URLSearchParams) {
+  const lat = parseFloat(params.get('lat') ?? '');
+  const lon = parseFloat(params.get('lon') ?? '');
+  const name = Array.from((params.get('name') ?? '').trim()).slice(0, NAME_MAX).join('').trim();
+  if (!(lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180 && name)) return null;
+  return { lat: coord(lat), lon: coord(lon), name };
 }
 
 export const GET: RequestHandler = async ({ url, fetch }) => {
-  const lat = parseFloat(url.searchParams.get('lat') ?? '');
-  const lon = parseFloat(url.searchParams.get('lon') ?? '');
-  const name = (url.searchParams.get('name') ?? '').slice(0, NAME_MAX);
-  const city = (name.split(',')[0] || name).trim();
-
-  if (!validParams(lat, lon, name) || !city) {
+  const params = canonicalParams(url.searchParams);
+  const city = params?.name.split(',')[0].trim();
+  if (!params || !city) {
     return new Response('Invalid lat/lon/name', { status: 400 });
   }
+  const { lat, lon, name } = params;
+
+  const canonical = new URL(`?${new URLSearchParams({ lat, lon, name })}`, url);
+  if (canonical.search !== url.search) redirect(308, canonical.pathname + canonical.search);
 
   const api = new URL('https://api.open-meteo.com/v1/forecast');
-  api.searchParams.set('latitude', String(lat));
-  api.searchParams.set('longitude', String(lon));
+  api.searchParams.set('latitude', lat);
+  api.searchParams.set('longitude', lon);
   api.searchParams.set('current', 'temperature_2m,weather_code,precipitation');
   api.searchParams.set(
     'daily',
@@ -110,31 +110,36 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
   api.searchParams.set('timezone', 'auto');
   api.searchParams.set('forecast_days', '7');
 
-  const consensusRequest = fetchConsensus([{ latitude: lat, longitude: lon }], 7).then(
+  let w: any;
+  try {
+    const r = await fetch(api, { signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS) });
+    if (!r.ok) throw new Error('weather fetch failed');
+    w = await r.json();
+    if (!w?.current || !Array.isArray(w?.daily?.time)) throw new Error('unexpected weather shape');
+  } catch {
+    return new Response('Upstream weather error', {
+      status: 502,
+      headers: { 'cache-control': 'public, max-age=60, s-maxage=60' },
+    });
+  }
+
+  const consensus = await fetchConsensus([{ latitude: Number(lat), longitude: Number(lon) }], 7).then(
     ([c]) => c,
     () => null,
   );
-  let w: any;
-  try {
-    const r = await fetch(api);
-    if (!r.ok) throw new Error('weather fetch failed');
-    w = await r.json();
-  } catch {
-    return new Response('Upstream weather error', { status: 502 });
-  }
 
   const temp = Math.round(w.current.temperature_2m);
   const condition = WMO_EN[describe(w.current.weather_code, 1).labelKey] ?? 'Weather';
   const precip: number = w.current.precipitation ?? 0;
 
-  const forecast = { ...w, consensus: await consensusRequest };
+  const forecast = { ...w, consensus };
   const days = (w.daily.time as string[]).slice(0, 7).map((day, i) => {
     const { min, max, sum } = dayForecast(forecast, i);
     return {
       label: new Date(day).toLocaleDateString('en-US', { weekday: 'short' }),
       max: Math.round(max),
       min: Math.round(min),
-      cond: WMO_EN[describe(w.daily.weather_code[i], 1).labelKey] ?? '',
+      cond: WMO_EN[describe(w.daily.weather_code?.[i], 1).labelKey] ?? '',
       precip: sum,
     };
   });
