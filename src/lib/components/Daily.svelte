@@ -13,6 +13,9 @@
     import { Separator } from "#lib/components/ui/separator/index.js";
     import { ScrollArea } from "#lib/components/ui/scroll-area/index.js";
     import * as Tooltip from "#lib/components/ui/tooltip/index.js";
+    import * as Popover from "#lib/components/ui/popover/index.js";
+    import { Button } from "#lib/components/ui/button/index.js";
+    import InfoIcon from "@lucide/svelte/icons/info";
     import { describe, iconColor } from "#lib/wmo.js";
     import {
         fmtTemp,
@@ -24,7 +27,7 @@
         kmhToBeaufort,
     } from "#lib/format.js";
     import { t, locale } from "#lib/i18n.svelte.js";
-    import { dayForecast, type ConsensusVariable, type Spread, type WeatherData } from "#lib/weather.js";
+    import { CONSENSUS_MODELS, dayForecast, type ConsensusVariable, type Spread, type WeatherData } from "#lib/weather.js";
 
     type Props = { data: WeatherData };
     let { data }: Props = $props();
@@ -203,9 +206,46 @@
                     {t("forecast_7d")}
                 </Card.Title>
                 {#if modelCount >= 2}
-                    <span class="whitespace-nowrap text-[11px] text-muted-foreground/70">
-                        {t("consensus.models", { count: modelCount })}
-                    </span>
+                    <div class="flex items-baseline gap-0.5 whitespace-nowrap">
+                        <span class="text-[11px] text-muted-foreground/70">
+                            {t("consensus.models", { count: modelCount })}
+                        </span>
+                        <Popover.Root>
+                            <Popover.Trigger>
+                                {#snippet child({ props })}
+                                    <Button
+                                        {...props}
+                                        variant="ghost"
+                                        size="icon"
+                                        class="pressable -my-1.5 size-7 self-center rounded-md text-muted-foreground/70 hover:text-foreground"
+                                        aria-label={t("consensus.info")}
+                                    >
+                                        <InfoIcon class="size-3.5" />
+                                    </Button>
+                                {/snippet}
+                            </Popover.Trigger>
+                            <Popover.Content
+                                side="bottom"
+                                align="end"
+                                sideOffset={6}
+                                collisionPadding={16}
+                                class="w-72 gap-2 p-3 text-xs"
+                            >
+                                <p class="font-medium text-foreground">{t("consensus.info_title")}</p>
+                                <p class="text-muted-foreground">{t("consensus.info_body")}</p>
+                                <ul class="grid gap-0.5">
+                                    {#each CONSENSUS_MODELS as model (model.id)}
+                                        <li class="flex items-center gap-2">
+                                            <span class="size-1 shrink-0 rounded-full bg-muted-foreground/60"></span>
+                                            {model.name}
+                                        </li>
+                                    {/each}
+                                </ul>
+                                <p class="text-muted-foreground">{t("consensus.info_range")}</p>
+                                <p class="text-muted-foreground/70">{t("consensus.info_other")}</p>
+                            </Popover.Content>
+                        </Popover.Root>
+                    </div>
                 {/if}
             </div>
         </Card.Header>

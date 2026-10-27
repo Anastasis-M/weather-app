@@ -111,13 +111,13 @@ async function fetchAirQuality({
   }
 }
 
-const CONSENSUS_MODELS = [
-  "ecmwf_ifs025",
-  "gfs_seamless",
-  "icon_seamless",
-  "meteofrance_seamless",
-  "ukmo_seamless",
-];
+export const CONSENSUS_MODELS = [
+  { id: "ecmwf_ifs025", name: "ECMWF IFS" },
+  { id: "gfs_seamless", name: "NOAA GFS" },
+  { id: "icon_seamless", name: "DWD ICON" },
+  { id: "meteofrance_seamless", name: "Météo-France" },
+  { id: "ukmo_seamless", name: "UK Met Office" },
+] as const;
 const CONSENSUS_DAILY = [
   "temperature_2m_max",
   "temperature_2m_min",
@@ -141,7 +141,7 @@ export function parseConsensus(raw: any): Consensus | null {
   for (const variable of CONSENSUS_DAILY) {
     consensus[variable] = {};
     days.forEach((day, i) => {
-      const values = CONSENSUS_MODELS.map((m) => Number(raw.daily[`${variable}_${m}`]?.[i] ?? NaN))
+      const values = CONSENSUS_MODELS.map((m) => Number(raw.daily[`${variable}_${m.id}`]?.[i] ?? NaN))
         .filter(Number.isFinite)
         .sort((a, b) => a - b);
       if (typeof day === "string" && values.length >= 2) {
@@ -165,7 +165,7 @@ export async function fetchConsensus(
   u.searchParams.set("latitude", coords.map((c) => c.latitude).join(","));
   u.searchParams.set("longitude", coords.map((c) => c.longitude).join(","));
   u.searchParams.set("daily", CONSENSUS_DAILY.join(","));
-  u.searchParams.set("models", CONSENSUS_MODELS.join(","));
+  u.searchParams.set("models", CONSENSUS_MODELS.map((m) => m.id).join(","));
   u.searchParams.set("timezone", "auto");
   u.searchParams.set("forecast_days", String(days));
   const json = await readWeatherJson(await fetchWeatherResponse(u));
