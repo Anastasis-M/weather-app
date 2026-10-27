@@ -49,7 +49,7 @@
         <div class="min-w-0 flex-1">
           <div class="flex items-start gap-2">
             <MapPinIcon class="mt-1 size-5 shrink-0 text-accent sm:mt-1.5" />
-            <Card.Title class="min-w-0 text-balance text-2xl! font-bold leading-tight tracking-tight text-foreground sm:text-3xl!">
+            <Card.Title class="min-w-0 text-balance wrap-break-word text-2xl! font-bold leading-tight tracking-tight text-foreground sm:text-3xl!">
               {placeTitle}
             </Card.Title>
           </div>
@@ -63,10 +63,12 @@
             size="sm"
             onclick={onToggleSave}
             aria-pressed={saved}
-            class="pressable h-9 shrink-0 gap-1.5 {saved ? 'border-accent/30 bg-accent/15 text-accent hover:bg-accent/20 hover:text-accent' : 'text-muted-foreground'}"
+            aria-label={t(saved ? 'places.saved' : 'places.save')}
+            title={t(saved ? 'places.saved' : 'places.save')}
+            class="pressable size-9 shrink-0 gap-1.5 px-0 sm:w-auto sm:px-3 {saved ? 'border-accent/30 bg-accent/15 text-accent hover:bg-accent/20 hover:text-accent' : 'text-muted-foreground'}"
           >
             <StarIcon class="size-4 {saved ? 'fill-accent' : ''}" />
-            {t(saved ? 'places.saved' : 'places.save')}
+            <span class="hidden sm:inline">{t(saved ? 'places.saved' : 'places.save')}</span>
           </Button>
         {/if}
       </div>
