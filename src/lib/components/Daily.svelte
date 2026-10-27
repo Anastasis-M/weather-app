@@ -13,6 +13,7 @@
     import { Separator } from "#lib/components/ui/separator/index.js";
     import { ScrollArea } from "#lib/components/ui/scroll-area/index.js";
     import * as Tooltip from "#lib/components/ui/tooltip/index.js";
+    import type { Snippet } from "svelte";
     import * as Popover from "#lib/components/ui/popover/index.js";
     import { Button } from "#lib/components/ui/button/index.js";
     import InfoIcon from "@lucide/svelte/icons/info";
@@ -149,29 +150,18 @@
     }
 </script>
 
-{#snippet rainRange(s: Spread)}
+{#snippet badgeTooltip(lines: string[], badge: Snippet<[Record<string, unknown>]>)}
     <Tooltip.Root>
         <Tooltip.Trigger tabindex={-1}>
             {#snippet child({ props })}
-                <span {...props} class="font-normal text-rain/60"
-                    >{Math.round(s.low)}–{Math.round(s.high)}</span
-                >
+                {@render badge(props)}
             {/snippet}
         </Tooltip.Trigger>
-        <Tooltip.Content>{t("consensus.range", { low: fmtMm(s.low), high: fmtMm(s.high) })}</Tooltip.Content>
-    </Tooltip.Root>
-{/snippet}
-
-{#snippet windRange(s: Spread)}
-    {@const low = kmhToBeaufort(s.low)}
-    {@const high = kmhToBeaufort(s.high)}
-    <Tooltip.Root>
-        <Tooltip.Trigger tabindex={-1}>
-            {#snippet child({ props })}
-                <span {...props} class="font-normal text-muted-foreground/60">{low}–{high}</span>
-            {/snippet}
-        </Tooltip.Trigger>
-        <Tooltip.Content>{t("consensus.range", { low: `${low} Bf`, high: `${high} Bf` })}</Tooltip.Content>
+        <Tooltip.Content>
+            <div class="flex flex-col gap-0.5">
+                {#each lines as line (line)}<span>{line}</span>{/each}
+            </div>
+        </Tooltip.Content>
     </Tooltip.Root>
 {/snippet}
 
@@ -266,6 +256,50 @@
             {@const dayDirDeg = daily.wind_direction_10m_dominant?.[i]}
             {@const hasDayDir = dayDirDeg != null}
             {@const isOpen = openIdx === i}
+            {@const windLines = [
+                `${t("wind")}: ${dayBf} Bf, ${t("bf." + dayBf)}`,
+                ...(windDisagrees(windSpread)
+                    ? [t("consensus.range", { low: `${kmhToBeaufort(windSpread!.low)} Bf`, high: `${kmhToBeaufort(windSpread!.high)} Bf` })]
+                    : []),
+            ]}
+            {@const rainLines = [
+                sum >= 0.2 ? `${t("day_total")}: ${fmtMm(sum)}` : t("rain_chance", { pop }),
+                ...(rainDisagrees(sumSpread)
+                    ? [t("consensus.range", { low: fmtMm(sumSpread!.low), high: fmtMm(sumSpread!.high) })]
+                    : []),
+            ]}
+            {#snippet windBadge(props: Record<string, unknown>, extra: string, withDir: boolean)}
+                <Badge {...props} variant="secondary" class="nums text-muted-foreground {extra}">
+                    <span class="sr-only">{windLines.join(". ")}</span>
+                    <WindIcon aria-hidden="true" />
+                    <span aria-hidden="true">{dayBf} Bf</span>
+                    {#if windDisagrees(windSpread)}
+                        <span class="font-normal text-muted-foreground/60" aria-hidden="true"
+                            >{kmhToBeaufort(windSpread!.low)}–{kmhToBeaufort(windSpread!.high)}</span
+                        >
+                    {/if}
+                    {#if withDir}
+                        <span
+                            class="inline-flex"
+                            aria-hidden="true"
+                            style={`transform: rotate(${dayDirDeg ?? 0}deg);`}
+                        >
+                            <NavigationIcon class="size-3" />
+                        </span>
+                    {/if}
+                </Badge>
+            {/snippet}
+            {#snippet rainBadge(props: Record<string, unknown>, extra: string)}
+                <Badge {...props} class="nums bg-rain/10 text-rain {extra}">
+                    <CloudRainIcon />
+                    {rainDisagrees(sumSpread) ? fmtMm(sum) : rainLabel(sum, pop)}
+                    {#if rainDisagrees(sumSpread)}
+                        <span class="font-normal text-rain/60"
+                            >{Math.round(sumSpread!.low)}–{Math.round(sumSpread!.high)}</span
+                        >
+                    {/if}
+                </Badge>
+            {/snippet}
             {#if i > 0}<Separator />{/if}
             <Collapsible.Root
                 open={isOpen}
@@ -319,45 +353,16 @@
                     </div>
                     <div class="flex items-center justify-end gap-1.5 pl-0.5">
                         {#if hasDayDir}
-                            <Badge
-                                variant="secondary"
-                                class="nums hidden text-muted-foreground min-[460px]:inline-flex"
-                            >
-                                <span class="sr-only"
-                                    >{t("wind")}: {dayBf} Bf, {t("bf." + dayBf)}</span
-                                >
-                                <WindIcon aria-hidden="true" />
-                                <span aria-hidden="true">{dayBf} Bf</span>
-                                {#if windDisagrees(windSpread)}
-                                    {@render windRange(windSpread!)}
-                                {/if}
-                                <Tooltip.Root>
-                                    <Tooltip.Trigger tabindex={-1}>
-                                        {#snippet child({ props })}
-                                            <span
-                                                {...props}
-                                                class="inline-flex"
-                                                aria-hidden="true"
-                                                style={`transform: rotate(${dayDirDeg ?? 0}deg);`}
-                                            >
-                                                <NavigationIcon class="size-3" />
-                                            </span>
-                                        {/snippet}
-                                    </Tooltip.Trigger>
-                                    <Tooltip.Content>{t("wind")}</Tooltip.Content>
-                                </Tooltip.Root>
-                            </Badge>
+                            {#snippet desktopWind(props: Record<string, unknown>)}
+                                {@render windBadge(props, "hidden min-[460px]:inline-flex", true)}
+                            {/snippet}
+                            {@render badgeTooltip(windLines, desktopWind)}
                         {/if}
                         {#if sum >= 0.2 || pop >= 35}
-                            <Badge
-                                class="nums hidden bg-rain/10 text-rain min-[460px]:inline-flex"
-                            >
-                                <CloudRainIcon />
-                                {rainDisagrees(sumSpread) ? fmtMm(sum) : rainLabel(sum, pop)}
-                                {#if rainDisagrees(sumSpread)}
-                                    {@render rainRange(sumSpread!)}
-                                {/if}
-                            </Badge>
+                            {#snippet desktopRain(props: Record<string, unknown>)}
+                                {@render rainBadge(props, "hidden min-[460px]:inline-flex")}
+                            {/snippet}
+                            {@render badgeTooltip(rainLines, desktopRain)}
                         {/if}
                         <ChevronDownIcon
                             class="size-4 shrink-0 text-muted-foreground/60 transition-transform duration-200 {isOpen
@@ -370,36 +375,15 @@
                     <div
                         class="col-span-full flex min-w-0 items-center gap-1.5 min-[460px]:hidden"
                     >
-                        <Badge
-                            variant="secondary"
-                            class="nums min-w-0 shrink text-muted-foreground"
-                        >
-                            <span class="sr-only"
-                                >{t("wind")}: {dayBf} Bf, {t("bf." + dayBf)}</span
-                            >
-                            <WindIcon aria-hidden="true" />
-                            <span aria-hidden="true">{dayBf} Bf</span>
-                            {#if windDisagrees(windSpread)}
-                                {@render windRange(windSpread!)}
-                            {/if}
-                            {#if hasDayDir}
-                                <span
-                                    class="inline-flex"
-                                    aria-hidden="true"
-                                    style={`transform: rotate(${dayDirDeg ?? 0}deg);`}
-                                >
-                                    <NavigationIcon class="size-3" />
-                                </span>
-                            {/if}
-                        </Badge>
+                        {#snippet mobileWind(props: Record<string, unknown>)}
+                            {@render windBadge(props, "min-w-0 shrink", hasDayDir)}
+                        {/snippet}
+                        {@render badgeTooltip(windLines, mobileWind)}
                         {#if sum >= 0.2 || pop >= 35}
-                            <Badge class="nums ml-auto bg-rain/10 text-rain">
-                                <CloudRainIcon />
-                                {rainDisagrees(sumSpread) ? fmtMm(sum) : rainLabel(sum, pop)}
-                                {#if rainDisagrees(sumSpread)}
-                                    {@render rainRange(sumSpread!)}
-                                {/if}
-                            </Badge>
+                            {#snippet mobileRain(props: Record<string, unknown>)}
+                                {@render rainBadge(props, "ml-auto")}
+                            {/snippet}
+                            {@render badgeTooltip(rainLines, mobileRain)}
                         {/if}
                     </div>
                 </Collapsible.Trigger>
@@ -545,13 +529,6 @@
                                 {/each}
                             </ul>
                         </ScrollArea>
-                        <div class="mt-1.5 px-0.5">
-                            {@render source(
-                                hasHourlyMedians && models >= 2
-                                    ? t("source.hourly", { count: models })
-                                    : t("source.best_match"),
-                            )}
-                        </div>
                     </div>
                     {/if}
                 </Collapsible.Content>
