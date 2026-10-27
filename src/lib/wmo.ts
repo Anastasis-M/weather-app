@@ -13,15 +13,6 @@ export function isPrecipitation(code: number): boolean {
   return RAIN_CODES.has(code) || SNOW_CODES.has(code) || STORM_CODES.has(code);
 }
 
-export type Sky = 'clear' | 'partly' | 'cloudy' | 'wet';
-
-export function skyOf(code: number): Sky {
-  if (isPrecipitation(code)) return 'wet';
-  if (SUNNY_CODES.has(code)) return 'clear';
-  if (code === 2) return 'partly';
-  return 'cloudy';
-}
-
 export function iconColor(icon: IconName): string {
   switch (icon) {
     case 'sun':        return 'text-accent';
