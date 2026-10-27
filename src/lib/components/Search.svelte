@@ -208,7 +208,7 @@
                         value={resultValue(r)}
                         onSelect={() => pick(r)}
                         forceMount
-                        class="pressable min-h-10 cursor-pointer gap-3 px-3 py-2.5 {i ===
+                        class="min-h-10 cursor-pointer gap-3 px-3 py-2.5 {i ===
                         active
                             ? 'bg-muted text-foreground'
                             : 'hover:bg-muted/60'}"
