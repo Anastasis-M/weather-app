@@ -14,14 +14,15 @@
     const data = $derived(
         hours.map((h) => ({
             hour: h.hour,
-            pop: h.pop,
+            mm: h.mm,
             state: h.past ? "past" : h.wet ? "wet" : "dry",
         })),
     );
-    const mmByHour = $derived(new Map(hours.map((h) => [h.hour, h.mm])));
+    const popByHour = $derived(new Map(hours.map((h) => [h.hour, h.pop])));
+    const yMax = $derived(Math.max(0.4, ...hours.map((h) => h.mm)) * 1.35);
 
     const config = $derived({
-        pop: { label: t("tips.chance"), color: "var(--color-rain)" },
+        mm: { label: t("precip"), color: "var(--color-rain)" },
     } satisfies Chart.ChartConfig);
 
     const tickHours = $derived(
@@ -33,27 +34,27 @@
     <BarChart
         {data}
         x="hour"
-        yDomain={[0, 100]}
+        yDomain={[0, yMax]}
         bandPadding={0.2}
-        series={[{ key: "pop", label: t("tips.chance") }]}
+        series={[{ key: "mm", label: t("precip") }]}
         c="state"
         cDomain={[...STATES]}
         cRange={COLORS}
-        axis="x"
         grid={false}
         props={{
             xAxis: { format: (d: string) => (tickHours.has(d) ? d : "") },
+            yAxis: { format: (d: number) => (d === 0 ? "" : `${d}mm`), ticks: 2 },
         }}
     >
         {#snippet tooltip()}
             <Chart.Tooltip
-                labelFormatter={(hour: string) => `${hour} · ${fmtMm(mmByHour.get(hour) ?? 0)}`}
+                labelFormatter={(hour: string) => `${hour} · ${t("tips.chance")} ${popByHour.get(hour) ?? 0}%`}
             >
                 {#snippet formatter({ value, name })}
                     <div class="size-2.5 shrink-0 rounded-[2px] bg-rain"></div>
                     <div class="flex flex-1 items-center justify-between gap-3 leading-none">
                         <span class="text-muted-foreground">{name}</span>
-                        <span class="text-foreground font-mono font-medium tabular-nums">{value}%</span>
+                        <span class="text-foreground font-mono font-medium tabular-nums">{fmtMm(Number(value))}</span>
                     </div>
                 {/snippet}
             </Chart.Tooltip>
