@@ -118,7 +118,12 @@ const CONSENSUS_MODELS = [
   "meteofrance_seamless",
   "ukmo_seamless",
 ];
-const CONSENSUS_DAILY = ["temperature_2m_max", "temperature_2m_min", "precipitation_sum"] as const;
+const CONSENSUS_DAILY = [
+  "temperature_2m_max",
+  "temperature_2m_min",
+  "precipitation_sum",
+  "wind_speed_10m_max",
+] as const;
 
 export type ConsensusVariable = (typeof CONSENSUS_DAILY)[number];
 export type Spread = { median: number; low: number; high: number; models: number };
@@ -178,7 +183,10 @@ export function todayHighLow(data: WeatherData): { high: number; low: number } {
   return { high: Math.max(high, now), low: Math.min(low, now) };
 }
 
-export function dayForecast(data: WeatherData, i: number): { min: number; max: number; sum: number } {
+export function dayForecast(
+  data: WeatherData,
+  i: number,
+): { min: number; max: number; sum: number; wind: number } {
   const day = data?.daily?.time?.[i];
   const consensus: Consensus | null = data?.consensus ?? null;
   const today = i === 0 ? todayHighLow(data) : null;
@@ -186,6 +194,7 @@ export function dayForecast(data: WeatherData, i: number): { min: number; max: n
     min: today?.low ?? consensus?.temperature_2m_min?.[day]?.median ?? Number(data?.daily?.temperature_2m_min?.[i]),
     max: today?.high ?? consensus?.temperature_2m_max?.[day]?.median ?? Number(data?.daily?.temperature_2m_max?.[i]),
     sum: consensus?.precipitation_sum?.[day]?.median ?? Number(data?.daily?.precipitation_sum?.[i] ?? 0),
+    wind: consensus?.wind_speed_10m_max?.[day]?.median ?? Number(data?.daily?.wind_speed_10m_max?.[i]),
   };
 }
 

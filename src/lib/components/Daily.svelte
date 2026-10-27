@@ -166,9 +166,9 @@
         <div class="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
         {#each daily.time as day, i}
             {@const w = describe(daily.weather_code[i], 1)}
-            {@const { min, max, sum, band, sumSpread } = days[i]}
+            {@const { min, max, sum, wind, band, sumSpread } = days[i]}
             {@const pop = daily.precipitation_probability_max?.[i] ?? 0}
-            {@const dayBf = kmhToBeaufort(daily.wind_speed_10m_max?.[i])}
+            {@const dayBf = kmhToBeaufort(wind)}
             {@const dayDirDeg = daily.wind_direction_10m_dominant?.[i]}
             {@const hasDayDir = dayDirDeg != null}
             {@const isOpen = openIdx === i}
