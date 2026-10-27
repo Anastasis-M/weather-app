@@ -3,7 +3,8 @@
   import SunriseIcon from '@lucide/svelte/icons/sunrise';
   import SunsetIcon from '@lucide/svelte/icons/sunset';
   import { t } from '$lib/i18n.svelte';
-  import { localNowMs, sunState } from '$lib/sun';
+  import { localNowMs, skySpans, sunState } from '$lib/sun';
+  import { describe, type Sky } from '$lib/wmo';
   import { moonLitPath, moonPhase } from '$lib/moon';
   import type { WeatherData } from '$lib/weather';
 
@@ -36,8 +37,8 @@
   });
 
   const point = (p: number) => ({ x: CX - RX * Math.cos(Math.PI * p), y: BASE - RY * Math.sin(Math.PI * p) });
-  const arc = (to: number) =>
-    Array.from({ length: 49 }, (_, i) => point((i / 48) * to))
+  const arc = (to: number, from = 0) =>
+    Array.from({ length: 49 }, (_, i) => point(from + (i / 48) * (to - from)))
       .map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`)
       .join(' ');
 
@@ -50,12 +51,35 @@
   const travelled = $derived(arc(progress));
   const fill = $derived(`${travelled} L${dot.x.toFixed(1)},${BASE} L${PAD},${BASE} Z`);
 
+  const PAST_OPACITY = 0.35;
+  const skyStroke = (sky: Sky) =>
+    sky === 'wet' ? 'var(--color-rain)' : sky === 'cloudy' ? 'var(--color-sub)' : night ? 'var(--color-snow)' : 'var(--color-warn)';
+  const skyOpacity = (sky: Sky) => (sky === 'partly' ? 0.55 : 1);
+
+  const spans = $derived(sun ? skySpans(sun, data.hourly?.time ?? [], data.hourly?.weather_code ?? []) : []);
+  const strokes = $derived(
+    spans.flatMap((s) => {
+      const label = t('sun.sky_span', { from: hhmmAt(s.from), to: hhmmAt(s.to), sky: t(describe(s.code, night ? 0 : 1).labelKey) });
+      const pieces = [];
+      if (s.from < progress) pieces.push({ d: arc(Math.min(s.to, progress), s.from), opacity: skyOpacity(s.sky) * PAST_OPACITY });
+      if (s.to > progress) pieces.push({ d: arc(s.to, Math.max(s.from, progress)), opacity: skyOpacity(s.sky) });
+      return pieces.map((p) => ({ ...p, color: skyStroke(s.sky), label }));
+    }),
+  );
+  const skyNow = $derived(spans.find((s) => s.from <= progress && progress < s.to)?.sky ?? 'clear');
+  const dimmed = $derived(skyNow === 'cloudy' || skyNow === 'wet');
+
   const duration = (ms: number) => {
     const minutes = Math.round(ms / MINUTE);
     if (minutes < 60) return t('sun.minutes', { m: minutes });
     return t('sun.duration', { h: Math.floor(minutes / 60), m: String(minutes % 60).padStart(2, '0') });
   };
   const hhmm = (iso: string) => iso.slice(11, 16);
+  const hhmmAt = (p: number) => {
+    if (!sun) return '';
+    const d = new Date(sun.arcStart + p * (sun.arcEnd - sun.arcStart));
+    return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+  };
 </script>
 
 {#if sun}
@@ -108,14 +132,20 @@
           <path d={arc(1)} fill="none" stroke="var(--color-line)" stroke-width="1.5" stroke-dasharray="3 5" stroke-linecap="round" />
           <line x1="6" x2={W - 6} y1={BASE} y2={BASE} stroke="var(--color-line)" stroke-width="1" />
           <path d={fill} fill={night ? 'url(#moon-sky)' : 'url(#sun-sky)'} />
-          <path
-            d={travelled}
-            fill="none"
-            stroke={night ? 'var(--color-snow)' : 'var(--color-warn)'}
-            stroke-opacity={night ? 0.55 : 1}
-            stroke-width="2.5"
-            stroke-linecap="round"
-          />
+          {#each strokes as s}
+            <path d={s.d} fill="none" stroke={s.color} stroke-opacity={s.opacity} stroke-width="2.5">
+              <title>{s.label}</title>
+            </path>
+          {:else}
+            <path
+              d={travelled}
+              fill="none"
+              stroke={night ? 'var(--color-snow)' : 'var(--color-warn)'}
+              stroke-opacity={night ? 0.55 : 1}
+              stroke-width="2.5"
+              stroke-linecap="round"
+            />
+          {/each}
           <circle cx={PAD} cy={BASE} r="2.5" fill={night ? 'var(--color-snow)' : 'var(--color-warn)'} />
           <circle cx={W - PAD} cy={BASE} r="2.5" fill="var(--color-mute)" />
           {#if night}
@@ -127,8 +157,10 @@
               transform={southern ? `matrix(-1 0 0 1 ${2 * dot.x} 0)` : undefined}
             />
           {:else}
-            <circle cx={dot.x} cy={dot.y} r="18" fill="url(#sun-glow)" />
-            <circle cx={dot.x} cy={dot.y} r="6.5" fill="var(--color-warn)" />
+            {#if !dimmed}
+              <circle cx={dot.x} cy={dot.y} r="18" fill="url(#sun-glow)" />
+            {/if}
+            <circle cx={dot.x} cy={dot.y} r="6.5" fill="var(--color-warn)" fill-opacity={dimmed ? 0.55 : 1} />
           {/if}
         </svg>
 
