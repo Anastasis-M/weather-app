@@ -152,7 +152,7 @@ export function parseConsensus(raw: any): Consensus | null {
   return consensus;
 }
 
-async function fetchConsensus(
+export async function fetchConsensus(
   coords: { latitude: number; longitude: number }[],
   days: number,
 ): Promise<(Consensus | null)[]> {
@@ -176,6 +176,17 @@ export function todayHighLow(data: WeatherData): { high: number; low: number } {
   const now = Number(data?.current?.temperature_2m);
   if (!Number.isFinite(now)) return { high, low };
   return { high: Math.max(high, now), low: Math.min(low, now) };
+}
+
+export function dayForecast(data: WeatherData, i: number): { min: number; max: number; sum: number } {
+  const day = data?.daily?.time?.[i];
+  const consensus: Consensus | null = data?.consensus ?? null;
+  const today = i === 0 ? todayHighLow(data) : null;
+  return {
+    min: today?.low ?? consensus?.temperature_2m_min?.[day]?.median ?? Number(data?.daily?.temperature_2m_min?.[i]),
+    max: today?.high ?? consensus?.temperature_2m_max?.[day]?.median ?? Number(data?.daily?.temperature_2m_max?.[i]),
+    sum: consensus?.precipitation_sum?.[day]?.median ?? Number(data?.daily?.precipitation_sum?.[i] ?? 0),
+  };
 }
 
 export async function fetchWeather({

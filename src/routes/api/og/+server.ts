@@ -1,5 +1,7 @@
 import { ImageResponse } from '@vercel/og';
 import { describe } from '$lib/wmo';
+import { fmtMm } from '$lib/format';
+import { dayForecast, fetchConsensus } from '$lib/weather';
 import type { RequestHandler } from './$types';
 
 // English WMO labels — duplicated from /share to keep this endpoint
@@ -108,6 +110,10 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
   api.searchParams.set('timezone', 'auto');
   api.searchParams.set('forecast_days', '7');
 
+  const consensusRequest = fetchConsensus([{ latitude: lat, longitude: lon }], 7).then(
+    ([c]) => c,
+    () => null,
+  );
   let w: any;
   try {
     const r = await fetch(api);
@@ -121,13 +127,17 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
   const condition = WMO_EN[describe(w.current.weather_code, 1).labelKey] ?? 'Weather';
   const precip: number = w.current.precipitation ?? 0;
 
-  const days = (w.daily.time as string[]).slice(0, 7).map((day, i) => ({
-    label: new Date(day).toLocaleDateString('en-US', { weekday: 'short' }),
-    max: Math.round(w.daily.temperature_2m_max[i]),
-    min: Math.round(w.daily.temperature_2m_min[i]),
-    cond: WMO_EN[describe(w.daily.weather_code[i], 1).labelKey] ?? '',
-    precip: (w.daily.precipitation_sum[i] ?? 0) as number,
-  }));
+  const forecast = { ...w, consensus: await consensusRequest };
+  const days = (w.daily.time as string[]).slice(0, 7).map((day, i) => {
+    const { min, max, sum } = dayForecast(forecast, i);
+    return {
+      label: new Date(day).toLocaleDateString('en-US', { weekday: 'short' }),
+      max: Math.round(max),
+      min: Math.round(min),
+      cond: WMO_EN[describe(w.daily.weather_code[i], 1).labelKey] ?? '',
+      precip: sum,
+    };
+  });
 
   const fonts = await loadFonts(url.origin);
 
@@ -253,9 +263,9 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
                         display: 'flex',
                         width: '90px',
                         justifyContent: 'flex-end',
-                        color: d.precip > 0 ? C.rain : C.mute,
+                        color: d.precip >= 0.2 ? C.rain : C.mute,
                       },
-                      d.precip > 0 ? `${d.precip}mm` : '—',
+                      d.precip >= 0.2 ? fmtMm(d.precip) : '—',
                     ),
                   ],
                 ),

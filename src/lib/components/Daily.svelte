@@ -23,7 +23,7 @@
         kmhToBeaufort,
     } from "$lib/format";
     import { t, locale } from "$lib/i18n.svelte";
-    import { todayHighLow, type ConsensusVariable, type Spread, type WeatherData } from "$lib/weather";
+    import { dayForecast, type ConsensusVariable, type Spread, type WeatherData } from "$lib/weather";
 
     type Props = { data: WeatherData };
     let { data }: Props = $props();
@@ -48,11 +48,8 @@
             const minSpread = spreadOf("temperature_2m_min", day);
             const maxSpread = spreadOf("temperature_2m_max", day);
             const sumSpread = spreadOf("precipitation_sum", day);
-            const today = i === 0 ? todayHighLow(data) : null;
             return {
-                min: today?.low ?? minSpread?.median ?? daily.temperature_2m_min[i],
-                max: today?.high ?? maxSpread?.median ?? daily.temperature_2m_max[i],
-                sum: sumSpread?.median ?? daily.precipitation_sum?.[i] ?? 0,
+                ...dayForecast(data, i),
                 band: minSpread && maxSpread ? { low: minSpread.low, high: maxSpread.high } : null,
                 sumSpread,
             };
