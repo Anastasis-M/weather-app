@@ -610,7 +610,7 @@
         <div
             class="mt-1 lg:grid lg:grid-cols-[minmax(340px,420px)_minmax(0,1fr)] lg:gap-4 lg:px-5 lg:flex-1 lg:min-h-0"
         >
-            <div class="lg:h-full lg:min-h-0 lg:overflow-y-auto">
+            <div class="no-scrollbar lg:h-full lg:min-h-0 lg:overflow-y-auto lg:p-px">
                 <Current
                     {data}
                     {place}
@@ -621,7 +621,7 @@
                 <SunArc {data} />
             </div>
             <div
-                class="lg:flex lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-col lg:overflow-y-auto"
+                class="no-scrollbar lg:flex lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-col lg:overflow-y-auto lg:p-px"
             >
                 <Daily {data} />
                 {#if place && showMap}
