@@ -14,6 +14,8 @@
     import { ScrollArea } from "#lib/components/ui/scroll-area/index.js";
     import * as Tooltip from "#lib/components/ui/tooltip/index.js";
     import type { Snippet } from "svelte";
+    import { MediaQuery } from "svelte/reactivity";
+    import { mergeProps } from "bits-ui";
     import * as Popover from "#lib/components/ui/popover/index.js";
     import { Button } from "#lib/components/ui/button/index.js";
     import InfoIcon from "@lucide/svelte/icons/info";
@@ -37,8 +39,18 @@
     const daily = $derived(data.daily);
     const hourly = $derived(data.hourly);
 
+    const canHover = new MediaQuery("(hover: hover)");
+
     let openIdx = $state(-1);
     let closingIdx = $state(-1);
+
+    function revealOpened(e: AnimationEvent) {
+        if (e.target !== e.currentTarget) return;
+        (e.currentTarget as HTMLElement).parentElement?.scrollIntoView({
+            block: "nearest",
+            behavior: "smooth",
+        });
+    }
 
     function setOpen(i: number, open: boolean) {
         if (openIdx >= 0 && (open || openIdx === i)) closingIdx = openIdx;
@@ -150,19 +162,39 @@
     }
 </script>
 
-{#snippet badgeTooltip(lines: string[], badge: Snippet<[Record<string, unknown>]>)}
-    <Tooltip.Root>
-        <Tooltip.Trigger tabindex={-1}>
-            {#snippet child({ props })}
-                {@render badge(props)}
-            {/snippet}
-        </Tooltip.Trigger>
-        <Tooltip.Content>
-            <div class="flex flex-col gap-0.5">
-                {#each lines as line (line)}<span>{line}</span>{/each}
-            </div>
-        </Tooltip.Content>
-    </Tooltip.Root>
+{#snippet hintLines(lines: string[])}
+    <div class="flex flex-col gap-0.5">
+        {#each lines as line (line)}<span>{line}</span>{/each}
+    </div>
+{/snippet}
+
+{#snippet badgeHint(lines: string[], badge: Snippet<[Record<string, unknown>]>)}
+    {#if canHover.current}
+        <Tooltip.Root>
+            <Tooltip.Trigger tabindex={-1}>
+                {#snippet child({ props })}
+                    {@render badge(props)}
+                {/snippet}
+            </Tooltip.Trigger>
+            <Tooltip.Content>{@render hintLines(lines)}</Tooltip.Content>
+        </Tooltip.Root>
+    {:else}
+        <Popover.Root>
+            <Popover.Trigger>
+                {#snippet child({ props })}
+                    {@render badge(mergeProps(props, { onclick: (e: MouseEvent) => e.stopPropagation() }))}
+                {/snippet}
+            </Popover.Trigger>
+            <Popover.Content
+                side="top"
+                sideOffset={6}
+                collisionPadding={16}
+                class="w-auto max-w-64 gap-0 p-2.5 text-xs"
+            >
+                {@render hintLines(lines)}
+            </Popover.Content>
+        </Popover.Root>
+    {/if}
 {/snippet}
 
 {#snippet source(label: string)}
@@ -302,6 +334,7 @@
             {/snippet}
             {#if i > 0}<Separator />{/if}
             <Collapsible.Root
+                class="scroll-mt-24 scroll-mb-4 lg:scroll-mt-2"
                 open={isOpen}
                 onOpenChange={(v) => setOpen(i, v)}
             >
@@ -356,13 +389,13 @@
                             {#snippet desktopWind(props: Record<string, unknown>)}
                                 {@render windBadge(props, "hidden min-[460px]:inline-flex", true)}
                             {/snippet}
-                            {@render badgeTooltip(windLines, desktopWind)}
+                            {@render badgeHint(windLines, desktopWind)}
                         {/if}
                         {#if sum >= 0.2 || pop >= 35}
                             {#snippet desktopRain(props: Record<string, unknown>)}
                                 {@render rainBadge(props, "hidden min-[460px]:inline-flex")}
                             {/snippet}
-                            {@render badgeTooltip(rainLines, desktopRain)}
+                            {@render badgeHint(rainLines, desktopRain)}
                         {/if}
                         <ChevronDownIcon
                             class="size-4 shrink-0 text-muted-foreground/60 transition-transform duration-200 {isOpen
@@ -378,62 +411,74 @@
                         {#snippet mobileWind(props: Record<string, unknown>)}
                             {@render windBadge(props, "min-w-0 shrink", hasDayDir)}
                         {/snippet}
-                        {@render badgeTooltip(windLines, mobileWind)}
+                        {@render badgeHint(windLines, mobileWind)}
                         {#if sum >= 0.2 || pop >= 35}
                             {#snippet mobileRain(props: Record<string, unknown>)}
                                 {@render rainBadge(props, "ml-auto")}
                             {/snippet}
-                            {@render badgeTooltip(rainLines, mobileRain)}
+                            {@render badgeHint(rainLines, mobileRain)}
                         {/if}
                     </div>
                 </Collapsible.Trigger>
 
                 <Collapsible.Content
                     class="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down"
-                    onanimationend={() => {
+                    onanimationend={(e) => {
                         if (!isOpen && closingIdx === i) closingIdx = -1;
+                        if (isOpen) revealOpened(e);
                     }}
                 >
                     {#if isOpen || closingIdx === i}
                     {@const hours = hourlyForDay(day, i === 0)}
                     <div class="bg-muted/25 px-3 pb-3 pt-1.5">
-                        <div
-                            class="grid grid-cols-1 gap-2 mb-2.5 min-[460px]:grid-cols-2"
-                        >
-                            <div
-                                class="weather-card rounded-md px-2.5 py-2 text-xs"
-                            >
-                                <span class="text-muted-foreground"
-                                    >{t("day_total")}
-                                </span>
-                                <span class="nums">{sum.toFixed(1)} mm</span>
-                                {#if sumSpread}
-                                    {@render source(t("consensus.models", { count: sumSpread.models }))}
-                                {/if}
-                                <div class="nums mt-1.5 text-muted-foreground">
-                                    {t("rain_chance", { pop })}
-                                </div>
-                                {@render source(t("source.best_match"))}
-                            </div>
-                            <div
-                                class="weather-card rounded-md px-2.5 py-2 text-xs"
-                            >
-                                <span class="text-muted-foreground"
-                                    >{t("max_wind")}
-                                </span>
-                                <span class="nums">{dayBf} Bf</span>
-                                <span class="text-muted-foreground">
-                                    · {t("bf." + dayBf)}</span
+                        <div class="mb-1.5 flex justify-end">
+                            <Popover.Root>
+                                <Popover.Trigger>
+                                    {#snippet child({ props })}
+                                        <Button
+                                            {...props}
+                                            variant="ghost"
+                                            size="sm"
+                                            class="pressable -mr-1.5 h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                        >
+                                            <InfoIcon class="size-3.5" />
+                                            {t("day_details")}
+                                        </Button>
+                                    {/snippet}
+                                </Popover.Trigger>
+                                <Popover.Content
+                                    side="bottom"
+                                    align="end"
+                                    sideOffset={4}
+                                    collisionPadding={16}
+                                    class="w-64 gap-2.5 p-3 text-xs"
                                 >
-                                {#if Number.isFinite(gusts)}
-                                    <span class="nums text-muted-foreground">
-                                        · {t("gusts", { speed: `${Math.round(gusts)} km/h` })}</span
-                                    >
-                                {/if}
-                                {#if windSpread}
-                                    {@render source(t("consensus.models", { count: windSpread.models }))}
-                                {/if}
-                            </div>
+                                    <div>
+                                        <span class="text-muted-foreground">{t("day_total")}</span>
+                                        <span class="nums">{sum.toFixed(1)} mm</span>
+                                        {#if sumSpread}
+                                            {@render source(t("consensus.models", { count: sumSpread.models }))}
+                                        {/if}
+                                    </div>
+                                    <div>
+                                        <span class="nums text-muted-foreground">{t("rain_chance", { pop })}</span>
+                                        {@render source(t("source.best_match"))}
+                                    </div>
+                                    <div>
+                                        <span class="text-muted-foreground">{t("max_wind")}</span>
+                                        <span class="nums">{dayBf} Bf</span>
+                                        <span class="text-muted-foreground">· {t("bf." + dayBf)}</span>
+                                        {#if Number.isFinite(gusts)}
+                                            <span class="nums text-muted-foreground">
+                                                · {t("gusts", { speed: `${Math.round(gusts)} km/h` })}</span
+                                            >
+                                        {/if}
+                                        {#if windSpread}
+                                            {@render source(t("consensus.models", { count: windSpread.models }))}
+                                        {/if}
+                                    </div>
+                                </Popover.Content>
+                            </Popover.Root>
                         </div>
                         {#if hours.length > 1}
                             <div
