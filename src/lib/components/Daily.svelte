@@ -363,44 +363,51 @@
 </section>
 
 {#snippet daySwitcher()}
-    <div class="no-scrollbar flex gap-1 overflow-x-auto" role="tablist" aria-label={t("forecast_7d")}>
+    <div class="no-scrollbar -mx-1 flex gap-0.5 overflow-x-auto px-1 py-0.5" role="tablist" aria-label={t("forecast_7d")}>
         {#each daily.time as day, i (day)}
             {@const w = describe(daily.weather_code[i], 1)}
-            <Button
-                variant={selected === i ? "secondary" : "ghost"}
-                size="sm"
+            <button
+                type="button"
                 role="tab"
                 aria-selected={selected === i}
-                class="h-auto min-w-11 flex-1 flex-col gap-0.5 px-1 py-1.5"
+                class="pressable flex min-w-11 flex-1 flex-col items-center gap-1 rounded-lg py-2 text-muted-foreground transition-[background-color,box-shadow,color,transform] hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 aria-selected:bg-muted aria-selected:text-foreground aria-selected:shadow-[var(--shadow-border)]"
                 onclick={() => (selected = i)}
             >
-                <span class="text-xs">{i === 0 ? t("today") : fmtDayShort(day, tz, locale())}</span>
-                <Icon name={w.icon} size={18} class={iconColor(w.icon)} />
-                <span class="nums text-[11px]">{fmtTemp(days[i].max)}</span>
-            </Button>
+                <span class="text-xs font-medium {i === 0 ? 'text-accent' : ''}"
+                    >{i === 0 ? t("today") : fmtDayShort(day, tz, locale())}</span
+                >
+                <Icon name={w.icon} size={20} class={iconColor(w.icon)} />
+                <span class="nums text-xs text-foreground">{fmtTemp(days[i].max)}</span>
+            </button>
         {/each}
     </div>
 {/snippet}
 
-{#snippet detailTitle()}
-    {@const day = daily.time[selected]}
-    {selected === 0 ? t("today") : fmtDayLong(day, tz, locale())}
-{/snippet}
-
-{#snippet detailDescription()}
+{#snippet heading(Title: any, Description: any, clearClose: boolean)}
     {@const day = daily.time[selected]}
     {@const w = describe(daily.weather_code[selected], 1)}
-    <span class="nums">{fmtDate(day, tz, locale())} · {t(w.labelKey)} · {fmtTemp(days[selected].max)} / {fmtTemp(days[selected].min)}</span>
+    <div class="flex items-center gap-3 text-left {clearClose ? 'pr-8' : ''}">
+        <Icon name={w.icon} size={36} class="shrink-0 {iconColor(w.icon)}" />
+        <div class="min-w-0 flex-1">
+            <Title class="truncate text-lg font-semibold leading-tight">
+                {selected === 0 ? t("today") : fmtDayLong(day, tz, locale())}
+            </Title>
+            <Description class="truncate text-[13px]">
+                <span class="nums">{fmtDate(day, tz, locale())}</span> · {t(w.labelKey)}
+            </Description>
+        </div>
+        <div class="nums shrink-0 text-right leading-none">
+            <span class="text-2xl font-semibold">{fmtTemp(days[selected].max)}</span>
+            <span class="text-base text-muted-foreground">{fmtTemp(days[selected].min)}</span>
+        </div>
+    </div>
 {/snippet}
 
 {#if isDesktop.current}
     <Dialog.Root bind:open={detailOpen}>
-        <Dialog.Content class="max-h-[85vh] grid-cols-[minmax(0,1fr)] grid-rows-[auto_auto_minmax(0,1fr)] gap-4 sm:max-w-2xl">
+        <Dialog.Content class="max-h-[85vh] grid-cols-[minmax(0,1fr)] grid-rows-[auto_auto_minmax(0,1fr)] gap-4 p-5 sm:max-w-2xl">
             {#if selected >= 0}
-                <Dialog.Header>
-                    <Dialog.Title>{@render detailTitle()}</Dialog.Title>
-                    <Dialog.Description>{@render detailDescription()}</Dialog.Description>
-                </Dialog.Header>
+                {@render heading(Dialog.Title, Dialog.Description, true)}
                 {@render daySwitcher()}
                 <div class="min-h-0 overflow-y-auto">
                     <DayDetail {data} index={selected} />
@@ -412,11 +419,8 @@
     <Drawer.Root bind:open={detailOpen}>
         <Drawer.Content class="max-h-[90dvh]!">
             {#if selected >= 0}
-                <Drawer.Header class="text-left">
-                    <Drawer.Title>{@render detailTitle()}</Drawer.Title>
-                    <Drawer.Description>{@render detailDescription()}</Drawer.Description>
-                </Drawer.Header>
-                <div class="px-4 pb-2" data-vaul-no-drag>{@render daySwitcher()}</div>
+                <div class="px-4 pt-3 pb-3">{@render heading(Drawer.Title, Drawer.Description, false)}</div>
+                <div class="px-4 pb-3" data-vaul-no-drag>{@render daySwitcher()}</div>
                 <div class="min-h-0 flex-1 overflow-y-auto px-4 pb-6">
                     <DayDetail {data} index={selected} />
                 </div>

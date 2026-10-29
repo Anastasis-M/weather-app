@@ -1,7 +1,7 @@
 <script lang="ts">
     import { BarChart } from "layerchart";
     import * as Chart from "#lib/components/ui/chart/index.js";
-    import { chartEnter } from "#lib/chartMotion.svelte.js";
+    import { chartEnter, DAY_CHART_PADDING } from "#lib/dayChart.svelte.js";
     import { t, locale } from "#lib/i18n.svelte.js";
     import { fmtHour, fmtMm } from "#lib/format.js";
 
@@ -34,12 +34,13 @@
     <BarChart
         {data}
         x="hour"
+        padding={DAY_CHART_PADDING}
         yDomain={[0, yMax]}
         highlight={{ area: true, motion: "none" }}
         bandPadding={0.3}
         {series}
         props={{
-            bars: { motion: chartEnter() },
+            bars: { motion: chartEnter(), strokeWidth: 0 },
             xAxis: { format: (d: string) => (parseInt(d) % 6 === 0 ? d : "") },
             yAxis: { format: (d: number) => (d === 0 ? "" : `${d}`), ticks: 3 },
         }}

@@ -4,10 +4,17 @@
     import TempChart from "./TempChart.svelte";
     import WindChart from "./WindChart.svelte";
     import * as Tabs from "#lib/components/ui/tabs/index.js";
+    import ThermometerIcon from "@lucide/svelte/icons/thermometer";
+    import UmbrellaIcon from "@lucide/svelte/icons/umbrella";
+    import CloudDrizzleIcon from "@lucide/svelte/icons/cloud-drizzle";
+    import SunIcon from "@lucide/svelte/icons/sun";
+    import WindIcon from "@lucide/svelte/icons/wind";
     import { describe, iconColor } from "#lib/wmo.js";
-    import { fmtTemp, fmtHour, fmtMm, isSameYMD, kmhToBeaufort } from "#lib/format.js";
+    import { fmtTemp, fmtMm, isSameYMD, kmhToBeaufort } from "#lib/format.js";
     import { t, locale } from "#lib/i18n.svelte.js";
     import { daySummary, type SummaryLine } from "#lib/daySummary.js";
+    import { WIND_MEDIAN, WIND_STRONGEST } from "#lib/dayChart.svelte.js";
+    import type { Component } from "svelte";
     import { dayForecast, type Spread, type WeatherData } from "#lib/weather.js";
 
     type Metric = "temp" | "rain" | "wind";
@@ -40,12 +47,22 @@
                     precip,
                     precipHigh: data.consensus?.hourly?.precipitation?.[time]?.high ?? precip,
                     wind: hourly.wind_speed_10m?.[i] ?? 0,
+                    windHigh: data.consensus?.hourly?.wind_speed_10m?.[time]?.high ?? hourly.wind_speed_10m?.[i] ?? 0,
                 },
             ];
         }),
     );
 
-    const iconHours = $derived(hours.filter((_, i) => i % 3 === 0));
+    const ICON_EVERY = 3;
+
+    const LOOK: Record<SummaryLine["kind"], { icon: Component; tone: string; bg: string }> = {
+        temp: { icon: ThermometerIcon, tone: "text-warn", bg: "bg-warn/10" },
+        rain: { icon: UmbrellaIcon, tone: "text-rain", bg: "bg-rain/10" },
+        rain_possible: { icon: CloudDrizzleIcon, tone: "text-rain", bg: "bg-rain/10" },
+        chance: { icon: CloudDrizzleIcon, tone: "text-rain", bg: "bg-rain/10" },
+        dry: { icon: SunIcon, tone: "text-ok", bg: "bg-ok/10" },
+        wind: { icon: WindIcon, tone: "text-sub", bg: "bg-sub/10" },
+    };
 
     const summary = $derived(
         daySummary(hours, { ...forecast, wettestModelSum: sumSpread?.high ?? null }),
@@ -69,78 +86,102 @@
     }
 </script>
 
-{#snippet source(label: string)}
-    <div class="text-[11px] text-muted-foreground/70">{label}</div>
-{/snippet}
-
-{#snippet fact(label: string, value: string, note = "")}
-    <div>
-        <dt class="text-muted-foreground">{label}</dt>
-        <dd class="nums text-sm">{value}</dd>
-        {#if note}<dd class="nums text-muted-foreground">{note}</dd>{/if}
+{#snippet fact(label: string, value: string, notes: string[] = [])}
+    <div class="min-w-0">
+        <dt class="text-xs text-muted-foreground">{label}</dt>
+        <dd class="nums mt-0.5 text-xl font-semibold leading-tight">{value}</dd>
+        {#each notes.filter(Boolean) as note (note)}
+            <dd class="nums mt-0.5 text-xs text-muted-foreground">{note}</dd>
+        {/each}
     </div>
 {/snippet}
 
-<div class="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 p-0.5 text-xs">
-    <Tabs.Root bind:value={metric}>
+{#snippet swatch(color: string, label: string)}
+    <span class="flex items-center gap-1.5">
+        <span class="size-2.5 rounded-[2px]" style="background:{color}"></span>{label}
+    </span>
+{/snippet}
+
+<div class="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 p-0.5 text-sm">
+    <Tabs.Root bind:value={metric} class="gap-3">
         <Tabs.List class="w-full">
             <Tabs.Trigger value="temp">{t("temp_trend")}</Tabs.Trigger>
             <Tabs.Trigger value="rain">{t("precip")}</Tabs.Trigger>
             <Tabs.Trigger value="wind">{t("wind")}</Tabs.Trigger>
         </Tabs.List>
 
-        <section class="weather-card rounded-md px-2.5 py-2" data-vaul-no-drag>
-            <ol class="mb-1 flex justify-between pl-6" aria-hidden="true">
-                {#each iconHours as h (h.time)}
-                    {@const hw = describe(h.code, h.isDay)}
-                    <li class="flex flex-col items-center gap-0.5">
-                        <Icon name={hw.icon} size={18} class={iconColor(hw.icon)} />
-                        <span class="nums text-[10px] text-muted-foreground">{fmtHour(h.time, tz, locale())}</span>
+        <section class="weather-card rounded-lg p-3" data-vaul-no-drag>
+            <ol
+                class="mb-1 grid pr-1 pl-5"
+                style="grid-template-columns: repeat({hours.length}, minmax(0, 1fr))"
+                aria-hidden="true"
+            >
+                {#each hours as h, i (h.time)}
+                    <li class="flex justify-center">
+                        {#if i % ICON_EVERY === 0}
+                            {@const hw = describe(h.code, h.isDay)}
+                            <Icon name={hw.icon} size={20} class="shrink-0 {iconColor(hw.icon)}" />
+                        {/if}
                     </li>
                 {/each}
             </ol>
 
             <Tabs.Content value="temp">
                 {#if metric === "temp" && hours.length > 1}<TempChart {hours} {tz} />{/if}
-                <dl class="mt-2 grid grid-cols-2 gap-2">
-                    {@render fact(t("day.high"), fmtTemp(forecast.max))}
+                <dl class="mt-3 grid grid-cols-2 gap-3 border-t border-border/60 pt-3">
+                    {@render fact(t("day.high"), fmtTemp(forecast.max), [
+                        tempSpread ? t("consensus.models", { count: tempSpread.models }) : "",
+                    ])}
                     {@render fact(t("day.low"), fmtTemp(forecast.min))}
                 </dl>
-                {#if tempSpread}{@render source(t("consensus.models", { count: tempSpread.models }))}{/if}
             </Tabs.Content>
 
             <Tabs.Content value="rain">
                 {#if metric === "rain"}<PrecipChart {hours} {tz} />{/if}
-                <dl class="mt-2 grid grid-cols-2 gap-2">
-                    {@render fact(
-                        t("day_total"),
-                        fmtMm(forecast.sum),
-                        sumSpread
-                            ? t("consensus.range", { low: fmtMm(sumSpread.low), high: fmtMm(sumSpread.high) })
-                            : "",
-                    )}
-                    {@render fact(t("precip"), t("rain_chance", { pop }), t("source.best_match"))}
+                <div class="mt-1.5 flex justify-end gap-3 text-[11px] text-muted-foreground">
+                    {@render swatch("var(--color-rain)", t("chart.median"))}
+                    {@render swatch("color-mix(in oklab, var(--color-rain) 30%, transparent)", t("precip.wettest_model"))}
+                </div>
+                <dl class="mt-3 grid grid-cols-2 gap-3 border-t border-border/60 pt-3">
+                    {@render fact(t("day_total"), fmtMm(forecast.sum), [
+                        sumSpread ? t("consensus.range", { low: fmtMm(sumSpread.low), high: fmtMm(sumSpread.high) }) : "",
+                        sumSpread ? t("consensus.models", { count: sumSpread.models }) : "",
+                    ])}
+                    {@render fact(t("day.chance"), `${pop}%`, [t("source.best_match")])}
                 </dl>
-                {#if sumSpread}{@render source(t("consensus.models", { count: sumSpread.models }))}{/if}
             </Tabs.Content>
 
             <Tabs.Content value="wind">
                 {#if metric === "wind"}<WindChart {hours} {tz} />{/if}
-                <dl class="mt-2 grid grid-cols-2 gap-2">
-                    {@render fact(t("max_wind"), `${bf} Bf · ${t("bf." + bf)}`)}
+                <div class="mt-1.5 flex justify-end gap-3 text-[11px] text-muted-foreground">
+                    {@render swatch(WIND_MEDIAN, t("chart.median"))}
+                    {@render swatch(WIND_STRONGEST, t("wind.strongest_model"))}
+                </div>
+                <dl class="mt-3 grid grid-cols-2 gap-3 border-t border-border/60 pt-3">
+                    {@render fact(t("max_wind"), `${bf} Bf`, [
+                        t("bf." + bf),
+                        windSpread ? t("consensus.models", { count: windSpread.models }) : "",
+                    ])}
                     {#if Number.isFinite(forecast.gusts)}
                         {@render fact(t("day.gusts"), `${Math.round(forecast.gusts)} km/h`)}
                     {/if}
                 </dl>
-                {#if windSpread}{@render source(t("consensus.models", { count: windSpread.models }))}{/if}
             </Tabs.Content>
         </section>
     </Tabs.Root>
 
-    <section class="weather-card rounded-md px-2.5 py-2">
-        <h3 class="mb-1 text-muted-foreground">{t("day.summary")}</h3>
-        {#each summary as line (line.kind)}
-            <p class="text-sm">{sentence(line)}</p>
-        {/each}
+    <section class="weather-card rounded-lg p-3">
+        <h3 class="section-title mb-2.5">{t("day.summary")}</h3>
+        <ul class="flex flex-col gap-2.5">
+            {#each summary as line (line.kind)}
+                {@const look = LOOK[line.kind]}
+                <li class="flex items-center gap-3">
+                    <div class="grid size-8 shrink-0 place-items-center rounded-md {look.bg}">
+                        <look.icon class="size-4.5 {look.tone}" />
+                    </div>
+                    <p class="min-w-0 text-[13px] leading-snug">{sentence(line)}</p>
+                </li>
+            {/each}
+        </ul>
     </section>
 </div>

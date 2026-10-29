@@ -1,7 +1,7 @@
 <script lang="ts">
     import { AreaChart, Area } from "layerchart";
     import * as Chart from "#lib/components/ui/chart/index.js";
-    import { chartEnter } from "#lib/chartMotion.svelte.js";
+    import { chartEnter, DAY_CHART_PADDING } from "#lib/dayChart.svelte.js";
     import { tempColor } from "#lib/tempScale.js";
     import { fmtHour } from "#lib/format.js";
     import { t, locale } from "#lib/i18n.svelte.js";
@@ -17,6 +17,11 @@
             date: new Date(h.time),
             temp: Math.round(h.temp * 10) / 10,
         })),
+    );
+
+    const HALF_HOUR = 30 * 60 * 1000;
+    const xDomain = $derived(
+        data.length ? [new Date(+data[0].date - HALF_HOUR), new Date(+data[data.length - 1].date + HALF_HOUR)] : undefined,
     );
 
     const hi = $derived(Math.max(...hours.map((h) => h.temp)));
@@ -60,6 +65,8 @@
         {data}
         x="date"
         y="temp"
+        padding={DAY_CHART_PADDING}
+        {xDomain}
         yDomain={[dLo, dHi]}
         highlight={{ points: true, lines: true, motion: "none" }}
         series={[
