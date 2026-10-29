@@ -100,7 +100,7 @@
         </button>
       </div>
     {:else}
-      <ul class="-mx-5 flex snap-x snap-mandatory scroll-px-5 gap-2 overflow-x-auto px-5 [scrollbar-width:none] lg:mx-0 lg:overflow-visible lg:px-0">
+      <ul class="-mx-5 -my-px flex snap-x snap-mandatory scroll-px-5 gap-2 overflow-x-auto px-5 py-px [scrollbar-width:none] lg:mx-0 lg:overflow-visible lg:px-0">
         {#if places.here}
           {@const here = places.here}
           <li class="contents">
