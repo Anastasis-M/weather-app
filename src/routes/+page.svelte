@@ -185,8 +185,12 @@
         pullY = 0;
     }
 
-    // Hydrate from the persisted forecast when the network is unreachable.
-    // Returns true if we recovered something useful to render.
+    function show(loc: Location, forecast: WeatherData, fetchedAt: number) {
+        data = forecast;
+        place = { ...loc, timezone: loc.timezone ?? forecast?.timezone };
+        updated = new Date(fetchedAt);
+    }
+
     function hydrateFromCache(preferred?: Location): boolean {
         const home = homePlace();
         const cached =
@@ -194,9 +198,7 @@
             (home && loadWeather(home)) ??
             latestWeather();
         if (!cached) return false;
-        data = cached.data;
-        place = cached.location;
-        updated = new Date(cached.fetchedAt);
+        show(cached.location, cached.data, cached.fetchedAt);
         return true;
     }
 
@@ -209,11 +211,7 @@
     async function load(loc: Location) {
         const requestId = ++loadRequestId;
         const cached = loadWeather(loc);
-        if (cached) {
-            data = cached.data;
-            place = loc;
-            updated = new Date(cached.fetchedAt);
-        }
+        if (cached) show(loc, cached.data, cached.fetchedAt);
         showingCachedAt = cached?.fetchedAt ?? null;
         loading = true;
         loadingLocation = loc;
@@ -221,9 +219,7 @@
         try {
             const w = await fetchWeather(loc);
             if (requestId !== loadRequestId) return;
-            data = w;
-            place = loc;
-            updated = new Date();
+            show(loc, w, Date.now());
             saveWeather(loc, w);
             updateSummaryFromForecast(loc, w);
             armInterval();
@@ -268,8 +264,7 @@
         try {
             const w = await fetchWeather(place);
             if (requestId !== loadRequestId) return;
-            data = w;
-            updated = new Date();
+            show(place, w, Date.now());
             saveWeather(place, w);
             updateSummaryFromForecast(place, w);
             armInterval(); // reset the 1-hour timer
