@@ -2,16 +2,16 @@
     import { BarChart } from "layerchart";
     import * as Chart from "#lib/components/ui/chart/index.js";
     import { chartEnter, DAY_CHART_PADDING, WIND_MEDIAN, WIND_STRONGEST } from "#lib/dayChart.svelte.js";
-    import { t, locale } from "#lib/i18n.svelte.js";
+    import { t } from "#lib/i18n.svelte.js";
     import { fmtHour, kmhToBeaufort } from "#lib/format.js";
 
     type Hour = { time: string; wind: number; windHigh: number };
-    type Props = { hours: Hour[]; tz: string };
-    let { hours, tz }: Props = $props();
+    type Props = { hours: Hour[] };
+    let { hours }: Props = $props();
 
     const data = $derived(
         hours.map((h) => ({
-            hour: fmtHour(h.time, tz, locale()),
+            hour: fmtHour(h.time),
             kmh: Math.round(h.wind),
             high: Math.round(Math.max(h.wind, h.windHigh)),
         })),

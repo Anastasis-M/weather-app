@@ -22,13 +22,7 @@ export function fmtMm(n: number | null | undefined): string {
   return n >= 10 ? `${Math.round(n)}mm` : `${n.toFixed(1)}mm`;
 }
 
-export function fmtTime(iso: string | null | undefined, tz?: string, locale?: string): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  return d.toLocaleTimeString(locale ?? [], { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz });
-}
-
-export const fmtHour = fmtTime;
+export const fmtHour = (localIso: string): string => localIso.slice(11, 16);
 
 export function fmtDayShort(iso: string, tz?: string, locale?: string): string {
   const { date, timeZone } = parseDateForFormat(iso);

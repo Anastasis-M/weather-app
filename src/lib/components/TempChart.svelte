@@ -4,17 +4,17 @@
     import { chartEnter, DAY_CHART_PADDING } from "#lib/dayChart.svelte.js";
     import { tempColor } from "#lib/tempScale.js";
     import { fmtHour } from "#lib/format.js";
-    import { t, locale } from "#lib/i18n.svelte.js";
+    import { t } from "#lib/i18n.svelte.js";
 
     type Hour = { time: string; temp: number };
-    type Props = { hours: Hour[]; tz: string };
-    let { hours, tz }: Props = $props();
+    type Props = { hours: Hour[] };
+    let { hours }: Props = $props();
 
     const uid = $props.id();
 
     const data = $derived(
         hours.map((h) => ({
-            date: new Date(h.time),
+            date: new Date(`${h.time}Z`),
             temp: Math.round(h.temp * 10) / 10,
         })),
     );
@@ -55,9 +55,8 @@
         temp: { label: t("temp_trend"), color: tempColor(hi) },
     } satisfies Chart.ChartConfig);
 
-    function fmtAxisHour(d: Date): string {
-        return fmtHour(d.toISOString(), tz, locale());
-    }
+    const fmtAxisHour = (d: Date) => fmtHour(d.toISOString());
+    const xTicks = $derived(data.filter((_, i) => i % 6 === 0).map((d) => d.date));
 </script>
 
 <Chart.Container {config} class="aspect-auto h-40 w-full">
@@ -73,7 +72,7 @@
             { key: "temp", label: t("temp_trend"), color: tempColor(hi) },
         ]}
         props={{
-            xAxis: { format: fmtAxisHour, ticks: 4 },
+            xAxis: { format: fmtAxisHour, ticks: xTicks },
             yAxis: {
                 format: (d: number) => `${Math.round(d)}°`,
                 ticks: yTicks,

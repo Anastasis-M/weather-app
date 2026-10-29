@@ -127,7 +127,7 @@
             </ol>
 
             <Tabs.Content value="temp">
-                {#if metric === "temp" && hours.length > 1}<TempChart {hours} {tz} />{/if}
+                {#if metric === "temp" && hours.length > 1}<TempChart {hours} />{/if}
                 <dl class="mt-3 grid grid-cols-2 gap-3 border-t border-border/60 pt-3">
                     {@render fact(t("day.high"), fmtTemp(forecast.max), [
                         tempSpread ? t("consensus.models", { count: tempSpread.models }) : "",
@@ -137,7 +137,7 @@
             </Tabs.Content>
 
             <Tabs.Content value="rain">
-                {#if metric === "rain"}<PrecipChart {hours} {tz} />{/if}
+                {#if metric === "rain"}<PrecipChart {hours} />{/if}
                 <div class="mt-1.5 flex justify-end gap-3 text-[11px] text-muted-foreground">
                     {@render swatch("var(--color-rain)", t("chart.median"))}
                     {@render swatch("color-mix(in oklab, var(--color-rain) 30%, transparent)", t("precip.wettest_model"))}
@@ -152,7 +152,7 @@
             </Tabs.Content>
 
             <Tabs.Content value="wind">
-                {#if metric === "wind"}<WindChart {hours} {tz} />{/if}
+                {#if metric === "wind"}<WindChart {hours} />{/if}
                 <div class="mt-1.5 flex justify-end gap-3 text-[11px] text-muted-foreground">
                     {@render swatch(WIND_MEDIAN, t("chart.median"))}
                     {@render swatch(WIND_STRONGEST, t("wind.strongest_model"))}

@@ -2,16 +2,16 @@
     import { BarChart } from "layerchart";
     import * as Chart from "#lib/components/ui/chart/index.js";
     import { chartEnter, DAY_CHART_PADDING } from "#lib/dayChart.svelte.js";
-    import { t, locale } from "#lib/i18n.svelte.js";
+    import { t } from "#lib/i18n.svelte.js";
     import { fmtHour, fmtMm } from "#lib/format.js";
 
     type Hour = { time: string; precip: number; precipHigh: number };
-    type Props = { hours: Hour[]; tz: string };
-    let { hours, tz }: Props = $props();
+    type Props = { hours: Hour[] };
+    let { hours }: Props = $props();
 
     const data = $derived(
         hours.map((h) => ({
-            hour: fmtHour(h.time, tz, locale()),
+            hour: fmtHour(h.time),
             mm: h.precip,
             high: Math.max(h.precip, h.precipHigh),
         })),
