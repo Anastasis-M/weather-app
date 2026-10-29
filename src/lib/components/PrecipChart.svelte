@@ -1,25 +1,62 @@
 <script lang="ts">
-    import HourBars from "./HourBars.svelte";
+    import { BarChart } from "layerchart";
+    import * as Chart from "#lib/components/ui/chart/index.js";
+    import { chartEnter } from "#lib/chartMotion.svelte.js";
     import { t, locale } from "#lib/i18n.svelte.js";
     import { fmtHour, fmtMm } from "#lib/format.js";
 
-    type Hour = { time: string; precip: number; pop: number };
+    type Hour = { time: string; precip: number; precipHigh: number };
     type Props = { hours: Hour[]; tz: string };
     let { hours, tz }: Props = $props();
 
-    const bars = $derived(
-        hours.map((h) => ({ label: fmtHour(h.time, tz, locale()), value: h.precip, color: "var(--color-rain)" })),
+    const data = $derived(
+        hours.map((h) => ({
+            hour: fmtHour(h.time, tz, locale()),
+            mm: h.precip,
+            high: Math.max(h.precip, h.precipHigh),
+        })),
     );
-    const wettest = $derived(Math.max(0.4, ...hours.map((h) => h.precip)));
+
+    const series = $derived([
+        { key: "high", label: t("precip.wettest_model"), color: "color-mix(in oklab, var(--color-rain) 30%, transparent)" },
+        { key: "mm", label: t("precip"), color: "var(--color-rain)" },
+    ]);
+
+    const config = $derived({
+        high: { label: t("precip.wettest_model"), color: series[0].color },
+        mm: { label: t("precip"), color: series[1].color },
+    } satisfies Chart.ChartConfig);
+
+    const yMax = $derived(Math.max(0.4, ...data.map((d) => d.high)) * 1.35);
 </script>
 
-<HourBars
-    class="mt-1.5 h-24 w-full px-2.5 pb-1"
-    {bars}
-    max={wettest}
-    formatTick={(v) => `${v}`}
-    showLabel={(b) => parseInt(b.label) % 6 === 0}
-    title={(b) => b.label}
-    name={t("precip")}
-    formatValue={fmtMm}
-/>
+<Chart.Container {config} class="aspect-auto h-40 w-full">
+    <BarChart
+        {data}
+        x="hour"
+        yDomain={[0, yMax]}
+        highlight={{ area: true, motion: "none" }}
+        bandPadding={0.3}
+        {series}
+        props={{
+            bars: { motion: chartEnter() },
+            xAxis: { format: (d: string) => (parseInt(d) % 6 === 0 ? d : "") },
+            yAxis: { format: (d: number) => (d === 0 ? "" : `${d}`), ticks: 3 },
+        }}
+    >
+        {#snippet tooltip()}
+            <Chart.Tooltip>
+                {#snippet formatter({ value, name, item })}
+                    <div
+                        style="--color-bg: {item.color}"
+                        class="size-2.5 shrink-0 rounded-[2px] bg-(--color-bg)"
+                    ></div>
+                    <div class="flex flex-1 items-center justify-between gap-3 leading-none">
+                        <span class="text-muted-foreground">{name}</span>
+                        <span class="text-foreground font-mono font-medium tabular-nums">{fmtMm(Number(value))}</span>
+                    </div>
+                {/snippet}
+            </Chart.Tooltip>
+        {/snippet}
+    </BarChart>
+</Chart.Container>

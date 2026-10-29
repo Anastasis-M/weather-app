@@ -126,13 +126,13 @@ const CONSENSUS_DAILY = [
   "wind_speed_10m_max",
   "wind_gusts_10m_max",
 ] as const;
-const CONSENSUS_HOURLY = ["temperature_2m", "wind_speed_10m"] as const;
+const CONSENSUS_HOURLY = ["temperature_2m", "wind_speed_10m", "precipitation"] as const;
 
 export type ConsensusVariable = (typeof CONSENSUS_DAILY)[number];
 export type ConsensusHourlyVariable = (typeof CONSENSUS_HOURLY)[number];
 export type Spread = { median: number; low: number; high: number; models: number };
 export type Consensus = Record<ConsensusVariable, Record<string, Spread>> & {
-  hourly?: Record<ConsensusHourlyVariable, Record<string, number>>;
+  hourly?: Record<ConsensusHourlyVariable, Record<string, Spread>>;
 };
 
 function median(sorted: number[]): number {
@@ -146,7 +146,11 @@ function modelValues(series: any, variable: string, i: number): number[] {
     .sort((a, b) => a - b);
 }
 
-function parseHourlyMedians(raw: any): Consensus["hourly"] {
+function spreadOf(values: number[]): Spread {
+  return { median: median(values), low: values[0], high: values[values.length - 1], models: values.length };
+}
+
+function parseHourlySpreads(raw: any): Consensus["hourly"] {
   const times: unknown = raw?.hourly?.time;
   if (!Array.isArray(times)) return undefined;
   const hourly = {} as NonNullable<Consensus["hourly"]>;
@@ -154,7 +158,7 @@ function parseHourlyMedians(raw: any): Consensus["hourly"] {
     hourly[variable] = {};
     times.forEach((time, i) => {
       const values = modelValues(raw.hourly, variable, i);
-      if (typeof time === "string" && values.length >= 2) hourly[variable][time] = median(values);
+      if (typeof time === "string" && values.length >= 2) hourly[variable][time] = spreadOf(values);
     });
   }
   return hourly;
@@ -168,17 +172,10 @@ export function parseConsensus(raw: any): Consensus | null {
     consensus[variable] = {};
     days.forEach((day, i) => {
       const values = modelValues(raw.daily, variable, i);
-      if (typeof day === "string" && values.length >= 2) {
-        consensus[variable][day] = {
-          median: median(values),
-          low: values[0],
-          high: values[values.length - 1],
-          models: values.length,
-        };
-      }
+      if (typeof day === "string" && values.length >= 2) consensus[variable][day] = spreadOf(values);
     });
   }
-  const hourly = parseHourlyMedians(raw);
+  const hourly = parseHourlySpreads(raw);
   if (hourly) consensus.hourly = hourly;
   return consensus;
 }
@@ -232,7 +229,7 @@ function withHourlyMedians(hourly: any, medians: Consensus["hourly"]): any {
   const merged = { ...hourly };
   for (const variable of CONSENSUS_HOURLY) {
     merged[variable] = hourly.time.map(
-      (time: string, i: number) => medians[variable]?.[time] ?? hourly[variable]?.[i],
+      (time: string, i: number) => medians[variable]?.[time]?.median ?? hourly[variable]?.[i],
     );
   }
   return merged;

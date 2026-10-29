@@ -107,7 +107,7 @@
 	{/if}
 {/snippet}
 
-<TooltipPrimitive.Root variant="none" x={clampedX} xOffset={0}>
+<TooltipPrimitive.Root variant="none" x={clampedX} xOffset={0} motion="none">
 	<div
 		bind:this={ref}
 		bind:clientWidth={tooltipWidth}

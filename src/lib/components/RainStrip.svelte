@@ -1,5 +1,6 @@
 <script lang="ts">
-    import HourBars from "./HourBars.svelte";
+    import { BarChart } from "layerchart";
+    import * as Chart from "#lib/components/ui/chart/index.js";
     import { t } from "#lib/i18n.svelte.js";
     import { fmtMm } from "#lib/format.js";
     import type { RainHour } from "#lib/tips.js";
@@ -7,23 +8,57 @@
     type Props = { hours: RainHour[] };
     let { hours }: Props = $props();
 
-    const COLOR = { wet: "var(--color-rain)", dry: "var(--color-muted-foreground)", past: "var(--color-muted)" };
+    const STATES = ["wet", "dry", "past"] as const;
+    const COLORS = ["var(--color-rain)", "var(--color-muted-foreground)", "var(--color-muted)"];
 
-    const bars = $derived(
-        hours.map((h) => ({ label: h.hour, value: h.mm, color: COLOR[h.past ? "past" : h.wet ? "wet" : "dry"] })),
+    const data = $derived(
+        hours.map((h) => ({
+            hour: h.hour,
+            mm: h.mm,
+            state: h.past ? "past" : h.wet ? "wet" : "dry",
+        })),
     );
     const popByHour = $derived(new Map(hours.map((h) => [h.hour, h.pop])));
-    const wettest = $derived(Math.max(0.4, ...hours.map((h) => h.mm)));
-    const tickIndexes = $derived(new Set([0, Math.floor(hours.length / 2), hours.length - 1]));
+    const yMax = $derived(Math.max(0.4, ...hours.map((h) => h.mm)) * 1.35);
+
+    const config = $derived({
+        mm: { label: t("precip"), color: "var(--color-rain)" },
+    } satisfies Chart.ChartConfig);
+
+    const tickHours = $derived(
+        new Set([hours[0]?.hour, hours[Math.floor(hours.length / 2)]?.hour, hours[hours.length - 1]?.hour]),
+    );
 </script>
 
-<HourBars
-    class="mt-3 h-20 w-full"
-    {bars}
-    max={wettest}
-    formatTick={(v) => `${v}mm`}
-    showLabel={(_, i) => tickIndexes.has(i)}
-    title={(b) => t("tips.rain_hour", { hour: b.label, pop: popByHour.get(b.label) ?? 0 })}
-    name={t("precip")}
-    formatValue={fmtMm}
-/>
+<Chart.Container {config} class="mt-3 aspect-auto h-20 w-full">
+    <BarChart
+        {data}
+        x="hour"
+        yDomain={[0, yMax]}
+        highlight={{ area: true, motion: "none" }}
+        bandPadding={0.2}
+        series={[{ key: "mm", label: t("precip") }]}
+        c="state"
+        cDomain={[...STATES]}
+        cRange={COLORS}
+        grid={false}
+        props={{
+            xAxis: { format: (d: string) => (tickHours.has(d) ? d : "") },
+            yAxis: { format: (d: number) => (d === 0 ? "" : `${d}mm`), ticks: 2 },
+        }}
+    >
+        {#snippet tooltip()}
+            <Chart.Tooltip
+                labelFormatter={(hour: string) => `${hour} · ${t("tips.chance")} ${popByHour.get(hour) ?? 0}%`}
+            >
+                {#snippet formatter({ value, name })}
+                    <div class="size-2.5 shrink-0 rounded-[2px] bg-rain"></div>
+                    <div class="flex flex-1 items-center justify-between gap-3 leading-none">
+                        <span class="text-muted-foreground">{name}</span>
+                        <span class="text-foreground font-mono font-medium tabular-nums">{fmtMm(Number(value))}</span>
+                    </div>
+                {/snippet}
+            </Chart.Tooltip>
+        {/snippet}
+    </BarChart>
+</Chart.Container>

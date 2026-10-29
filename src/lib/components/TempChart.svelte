@@ -1,6 +1,7 @@
 <script lang="ts">
     import { AreaChart, Area } from "layerchart";
     import * as Chart from "#lib/components/ui/chart/index.js";
+    import { chartEnter } from "#lib/chartMotion.svelte.js";
     import { tempColor } from "#lib/tempScale.js";
     import { fmtHour } from "#lib/format.js";
     import { t, locale } from "#lib/i18n.svelte.js";
@@ -54,12 +55,13 @@
     }
 </script>
 
-<Chart.Container {config} class="mt-1.5 aspect-auto h-28 w-full px-2.5 pb-1">
+<Chart.Container {config} class="aspect-auto h-40 w-full">
     <AreaChart
         {data}
         x="date"
         y="temp"
         yDomain={[dLo, dHi]}
+        highlight={{ points: true, lines: true, motion: "none" }}
         series={[
             { key: "temp", label: t("temp_trend"), color: tempColor(hi) },
         ]}
@@ -107,6 +109,7 @@
                 seriesKey="temp"
                 y0={() => dLo}
                 fill="url(#temp-fill-{uid})"
+                motion={chartEnter()}
                 line={{ stroke: `url(#temp-line-${uid})`, class: "stroke-2" }}
             />
         {/snippet}

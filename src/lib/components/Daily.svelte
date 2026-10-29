@@ -1,17 +1,16 @@
 <script lang="ts">
     import Icon from "./Icon.svelte";
-    import PrecipChart from "./PrecipChart.svelte";
-    import TempChart from "./TempChart.svelte";
+    import DayDetail from "./DayDetail.svelte";
     import { tempGradient } from "#lib/tempScale.js";
-    import ChevronDownIcon from "@lucide/svelte/icons/chevron-down";
+    import ChevronRightIcon from "@lucide/svelte/icons/chevron-right";
     import NavigationIcon from "@lucide/svelte/icons/navigation";
     import WindIcon from "@lucide/svelte/icons/wind";
     import CloudRainIcon from "@lucide/svelte/icons/cloud-rain";
     import * as Card from "#lib/components/ui/card/index.js";
     import { Badge } from "#lib/components/ui/badge/index.js";
-    import * as Collapsible from "#lib/components/ui/collapsible/index.js";
     import { Separator } from "#lib/components/ui/separator/index.js";
-    import { ScrollArea } from "#lib/components/ui/scroll-area/index.js";
+    import * as Dialog from "#lib/components/ui/dialog/index.js";
+    import * as Drawer from "#lib/components/ui/drawer/index.js";
     import * as Tooltip from "#lib/components/ui/tooltip/index.js";
     import type { Snippet } from "svelte";
     import { MediaQuery } from "svelte/reactivity";
@@ -20,15 +19,7 @@
     import { Button } from "#lib/components/ui/button/index.js";
     import InfoIcon from "@lucide/svelte/icons/info";
     import { describe, iconColor } from "#lib/wmo.js";
-    import {
-        fmtTemp,
-        fmtHour,
-        fmtDayShort,
-        fmtDate,
-        fmtMm,
-        isSameYMD,
-        kmhToBeaufort,
-    } from "#lib/format.js";
+    import { fmtTemp, fmtDayShort, fmtDayLong, fmtDate, fmtMm, kmhToBeaufort } from "#lib/format.js";
     import { t, locale } from "#lib/i18n.svelte.js";
     import { CONSENSUS_MODELS, dayForecast, type ConsensusVariable, type Spread, type WeatherData } from "#lib/weather.js";
 
@@ -37,24 +28,16 @@
 
     const tz = $derived(data.timezone as string);
     const daily = $derived(data.daily);
-    const hourly = $derived(data.hourly);
 
     const canHover = new MediaQuery("(hover: hover)");
+    const isDesktop = new MediaQuery("(min-width: 768px)");
 
-    let openIdx = $state(-1);
-    let closingIdx = $state(-1);
+    let selected = $state(-1);
+    let detailOpen = $state(false);
 
-    function revealOpened(e: AnimationEvent) {
-        if (e.target !== e.currentTarget) return;
-        (e.currentTarget as HTMLElement).parentElement?.scrollIntoView({
-            block: "nearest",
-            behavior: "smooth",
-        });
-    }
-
-    function setOpen(i: number, open: boolean) {
-        if (openIdx >= 0 && (open || openIdx === i)) closingIdx = openIdx;
-        openIdx = open ? i : -1;
+    function openDay(i: number) {
+        selected = i;
+        detailOpen = true;
     }
 
     const spreadOf = (variable: ConsensusVariable, day: string): Spread | null =>
@@ -75,8 +58,6 @@
             };
         }),
     );
-
-    const hasHourlyMedians = $derived(!!data.consensus?.hourly);
 
     const modelCount = $derived(
         Math.max(0, ...Object.values(data.consensus?.temperature_2m_max ?? {}).map((s) => (s as Spread).models)),
@@ -120,46 +101,6 @@
         return sum >= 0.2 ? fmtMm(sum) : `${Math.round(pop)}%`;
     }
 
-
-    function cell(i: number, now = false, dayBreak = "") {
-        return {
-            time: hourly.time[i],
-            temp: hourly.temperature_2m[i],
-            code: hourly.weather_code[i],
-            isDay: hourly.is_day[i],
-            pop: hourly.precipitation_probability?.[i] ?? 0,
-            precip: hourly.precipitation?.[i] ?? 0,
-            wind: hourly.wind_speed_10m?.[i] ?? 0,
-            now,
-            dayBreak,
-        };
-    }
-
-    function hourlyForDay(dayIso: string, isToday = false) {
-        const out: any[] = [];
-
-        if (isToday) {
-            // Roll forward from the current hour through the next 24h so the
-            // strip never dead-ends at midnight; flag where tomorrow begins.
-            const cutoff = Date.now() - 60 * 60 * 1000; // keep the in-progress hour
-            let prev = "";
-            for (let i = 0; i < hourly.time.length && out.length < 24; i++) {
-                if (new Date(hourly.time[i]).getTime() < cutoff) continue;
-                const dayBreak =
-                    prev && !isSameYMD(prev, hourly.time[i], tz)
-                        ? fmtDayShort(hourly.time[i], tz, locale())
-                        : "";
-                out.push(cell(i, out.length === 0, dayBreak));
-                prev = hourly.time[i];
-            }
-            return out;
-        }
-
-        for (let i = 0; i < hourly.time.length; i++) {
-            if (isSameYMD(hourly.time[i], dayIso, tz)) out.push(cell(i));
-        }
-        return out;
-    }
 </script>
 
 {#snippet hintLines(lines: string[])}
@@ -195,10 +136,6 @@
             </Popover.Content>
         </Popover.Root>
     {/if}
-{/snippet}
-
-{#snippet source(label: string)}
-    <div class="text-[11px] text-muted-foreground/70">{label}</div>
 {/snippet}
 
 {#snippet rangeBar(min: number, max: number, band: { low: number; high: number } | null, isToday: boolean)}
@@ -287,7 +224,6 @@
             {@const dayBf = kmhToBeaufort(wind)}
             {@const dayDirDeg = daily.wind_direction_10m_dominant?.[i]}
             {@const hasDayDir = dayDirDeg != null}
-            {@const isOpen = openIdx === i}
             {@const windLines = [
                 `${t("wind")}: ${dayBf} Bf, ${t("bf." + dayBf)}`,
                 ...(windDisagrees(windSpread)
@@ -324,7 +260,7 @@
             {#snippet rainBadge(props: Record<string, unknown>, extra: string)}
                 <Badge {...props} class="nums bg-rain/10 text-rain {extra}">
                     <CloudRainIcon />
-                    {rainDisagrees(sumSpread) ? fmtMm(sum) : rainLabel(sum, pop)}
+                    {rainLabel(sum, pop)}
                     {#if rainDisagrees(sumSpread)}
                         <span class="font-normal text-rain/60"
                             >{Math.round(sumSpread!.low)}–{Math.round(sumSpread!.high)}</span
@@ -333,13 +269,18 @@
                 </Badge>
             {/snippet}
             {#if i > 0}<Separator />{/if}
-            <Collapsible.Root
-                class="scroll-mt-24 scroll-mb-4 lg:scroll-mt-2"
-                open={isOpen}
-                onOpenChange={(v) => setOpen(i, v)}
-            >
-                <Collapsible.Trigger
-                    class="grid w-full cursor-pointer select-none grid-cols-[52px_26px_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 px-3 py-2 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50 active:bg-muted/55 data-[state=open]:bg-muted/30 min-[460px]:min-h-[56px] min-[460px]:py-0 sm:grid-cols-[62px_28px_minmax(0,1fr)_auto] lg:grid-cols-[84px_28px_minmax(0,1fr)_auto] lg:gap-3 xl:grid-cols-[84px_28px_128px_minmax(0,1fr)_auto]"
+            <div
+                    role="button"
+                    tabindex="0"
+                    aria-haspopup="dialog"
+                    onclick={() => openDay(i)}
+                    onkeydown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            openDay(i);
+                        }
+                    }}
+                    class="grid w-full cursor-pointer select-none grid-cols-[52px_26px_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 px-3 py-2 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50 active:bg-muted/55 min-[460px]:min-h-[56px] min-[460px]:py-0 sm:grid-cols-[62px_28px_minmax(0,1fr)_auto] lg:grid-cols-[84px_28px_minmax(0,1fr)_auto] lg:gap-3 xl:grid-cols-[84px_28px_128px_minmax(0,1fr)_auto]"
                 >
                     <div>
                         <div
@@ -397,11 +338,7 @@
                             {/snippet}
                             {@render badgeHint(rainLines, desktopRain)}
                         {/if}
-                        <ChevronDownIcon
-                            class="size-4 shrink-0 text-muted-foreground/60 transition-transform duration-200 {isOpen
-                                ? 'rotate-180'
-                                : ''}"
-                        />
+                        <ChevronRightIcon class="size-4 shrink-0 text-muted-foreground/60" />
                     </div>
                     <!-- Mobile meta line: keeps chips out of the bar row so
                          every track spans the same width and stays comparable -->
@@ -419,166 +356,71 @@
                             {@render badgeHint(rainLines, mobileRain)}
                         {/if}
                     </div>
-                </Collapsible.Trigger>
-
-                <Collapsible.Content
-                    class="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down"
-                    onanimationend={(e) => {
-                        if (!isOpen && closingIdx === i) closingIdx = -1;
-                        if (isOpen) revealOpened(e);
-                    }}
-                >
-                    {#if isOpen || closingIdx === i}
-                    {@const hours = hourlyForDay(day, i === 0)}
-                    <div class="bg-muted/25 px-3 pb-3 pt-1.5">
-                        <div class="mb-1.5 flex justify-end">
-                            <Popover.Root>
-                                <Popover.Trigger>
-                                    {#snippet child({ props })}
-                                        <Button
-                                            {...props}
-                                            variant="ghost"
-                                            size="sm"
-                                            class="pressable -mr-1.5 h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
-                                        >
-                                            <InfoIcon class="size-3.5" />
-                                            {t("day_details")}
-                                        </Button>
-                                    {/snippet}
-                                </Popover.Trigger>
-                                <Popover.Content
-                                    side="bottom"
-                                    align="end"
-                                    sideOffset={4}
-                                    collisionPadding={16}
-                                    class="w-64 gap-2.5 p-3 text-xs"
-                                >
-                                    <div>
-                                        <span class="text-muted-foreground">{t("day_total")}</span>
-                                        <span class="nums">{sum.toFixed(1)} mm</span>
-                                        {#if sumSpread}
-                                            {@render source(t("consensus.models", { count: sumSpread.models }))}
-                                        {/if}
-                                    </div>
-                                    <div>
-                                        <span class="nums text-muted-foreground">{t("rain_chance", { pop })}</span>
-                                        {@render source(t("source.best_match"))}
-                                    </div>
-                                    <div>
-                                        <span class="text-muted-foreground">{t("max_wind")}</span>
-                                        <span class="nums">{dayBf} Bf</span>
-                                        <span class="text-muted-foreground">· {t("bf." + dayBf)}</span>
-                                        {#if Number.isFinite(gusts)}
-                                            <span class="nums text-muted-foreground">
-                                                · {t("gusts", { speed: `${Math.round(gusts)} km/h` })}</span
-                                            >
-                                        {/if}
-                                        {#if windSpread}
-                                            {@render source(t("consensus.models", { count: windSpread.models }))}
-                                        {/if}
-                                    </div>
-                                </Popover.Content>
-                            </Popover.Root>
-                        </div>
-                        {#if hours.length > 1}
-                            <div
-                                class="weather-card mb-2.5 rounded-md px-2.5 py-2 text-xs"
-                            >
-                                <span class="text-muted-foreground"
-                                    >{t("temp_trend")}</span
-                                >
-                                {#if hasHourlyMedians && models >= 2}
-                                    {@render source(t("consensus.models", { count: models }))}
-                                {/if}
-                                <TempChart {hours} {tz} />
-                            </div>
-                        {/if}
-                        {#if hours.some((h) => h.precip >= 0.1)}
-                            <div
-                                class="weather-card mb-2.5 rounded-md px-2.5 py-2 text-xs"
-                            >
-                                <span class="text-muted-foreground"
-                                    >{t("precip")}</span
-                                >
-                                {@render source(t("source.best_match"))}
-                                <PrecipChart {hours} {tz} />
-                            </div>
-                        {/if}
-                        <ScrollArea
-                            orientation="horizontal"
-                            class="w-full"
-                            scrollbarXClasses="h-1.5"
-                        >
-                            <ul class="flex gap-1 min-w-max">
-                                {#each hours as h}
-                                    {@const hw = describe(h.code, h.isDay)}
-                                    {@const hbf = kmhToBeaufort(h.wind)}
-                                    <li
-                                        class="flex flex-col items-center gap-1 px-2.5 py-1 min-w-[56px] {h.now
-                                            ? 'rounded-md bg-muted/40'
-                                            : ''} {h.dayBreak
-                                            ? 'ml-2 border-l border-border/70 pl-3.5'
-                                            : ''}"
-                                    >
-                                        <span
-                                            class="text-[11px] nums {h.dayBreak
-                                                ? 'font-medium text-foreground'
-                                                : 'text-muted-foreground'}"
-                                            >{h.now
-                                                ? t("now")
-                                                : h.dayBreak
-                                                  ? h.dayBreak
-                                                  : fmtHour(
-                                                        h.time,
-                                                        tz,
-                                                        locale(),
-                                                    )}</span
-                                        >
-                                        <Icon
-                                            name={hw.icon}
-                                            size={20}
-                                            class={iconColor(hw.icon)}
-                                        />
-                                        {#if h.precip > 0}
-                                            <Tooltip.Root>
-                                                <Tooltip.Trigger tabindex={-1}>
-                                                    {#snippet child({ props })}
-                                                        <span
-                                                            {...props}
-                                                            class="text-[10px] text-rain nums leading-none"
-                                                            >{fmtMm(h.precip)}</span
-                                                        >
-                                                    {/snippet}
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content>{t("precip")}</Tooltip.Content>
-                                            </Tooltip.Root>
-                                        {:else if h.pop >= 20}
-                                            <span
-                                                class="text-[10px] text-rain/70 nums leading-none"
-                                                >{h.pop}%</span
-                                            >
-                                        {:else}
-                                            <span
-                                                class="text-[10px] leading-none"
-                                                >&nbsp;</span
-                                            >
-                                        {/if}
-                                        <span class="text-xs nums"
-                                            >{fmtTemp(h.temp)}</span
-                                        >
-                                        <span
-                                            class="text-[10px] text-muted-foreground/70 nums leading-none"
-                                            >{hbf} Bf</span
-                                        >
-                                    </li>
-                                {/each}
-                            </ul>
-                        </ScrollArea>
-                    </div>
-                    {/if}
-                </Collapsible.Content>
-            </Collapsible.Root>
+                </div>
         {/each}
         </div>
     </Card.Root>
 </section>
+
+{#snippet daySwitcher()}
+    <div class="no-scrollbar flex gap-1 overflow-x-auto" role="tablist" aria-label={t("forecast_7d")}>
+        {#each daily.time as day, i (day)}
+            {@const w = describe(daily.weather_code[i], 1)}
+            <Button
+                variant={selected === i ? "secondary" : "ghost"}
+                size="sm"
+                role="tab"
+                aria-selected={selected === i}
+                class="h-auto min-w-11 flex-1 flex-col gap-0.5 px-1 py-1.5"
+                onclick={() => (selected = i)}
+            >
+                <span class="text-xs">{i === 0 ? t("today") : fmtDayShort(day, tz, locale())}</span>
+                <Icon name={w.icon} size={18} class={iconColor(w.icon)} />
+                <span class="nums text-[11px]">{fmtTemp(days[i].max)}</span>
+            </Button>
+        {/each}
+    </div>
+{/snippet}
+
+{#snippet detailTitle()}
+    {@const day = daily.time[selected]}
+    {selected === 0 ? t("today") : fmtDayLong(day, tz, locale())}
+{/snippet}
+
+{#snippet detailDescription()}
+    {@const day = daily.time[selected]}
+    {@const w = describe(daily.weather_code[selected], 1)}
+    <span class="nums">{fmtDate(day, tz, locale())} · {t(w.labelKey)} · {fmtTemp(days[selected].max)} / {fmtTemp(days[selected].min)}</span>
+{/snippet}
+
+{#if isDesktop.current}
+    <Dialog.Root bind:open={detailOpen}>
+        <Dialog.Content class="max-h-[85vh] grid-cols-[minmax(0,1fr)] grid-rows-[auto_auto_minmax(0,1fr)] gap-4 sm:max-w-2xl">
+            {#if selected >= 0}
+                <Dialog.Header>
+                    <Dialog.Title>{@render detailTitle()}</Dialog.Title>
+                    <Dialog.Description>{@render detailDescription()}</Dialog.Description>
+                </Dialog.Header>
+                {@render daySwitcher()}
+                <div class="min-h-0 overflow-y-auto">
+                    <DayDetail {data} index={selected} />
+                </div>
+            {/if}
+        </Dialog.Content>
+    </Dialog.Root>
+{:else}
+    <Drawer.Root bind:open={detailOpen}>
+        <Drawer.Content class="max-h-[90dvh]!">
+            {#if selected >= 0}
+                <Drawer.Header class="text-left">
+                    <Drawer.Title>{@render detailTitle()}</Drawer.Title>
+                    <Drawer.Description>{@render detailDescription()}</Drawer.Description>
+                </Drawer.Header>
+                <div class="px-4 pb-2" data-vaul-no-drag>{@render daySwitcher()}</div>
+                <div class="min-h-0 flex-1 overflow-y-auto px-4 pb-6">
+                    <DayDetail {data} index={selected} />
+                </div>
+            {/if}
+        </Drawer.Content>
+    </Drawer.Root>
+{/if}
