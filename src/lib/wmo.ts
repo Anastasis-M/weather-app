@@ -29,7 +29,6 @@ export function iconColor(icon: IconName): string {
   }
 }
 
-// WMO weather code → translation key + icon. Components run the key through t().
 export function describe(code: number, isDay: number | boolean = 1): Description {
   const day = isDay === 1 || isDay === true;
   switch (code) {

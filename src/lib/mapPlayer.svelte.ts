@@ -1,5 +1,3 @@
-// ── Weather map playback ────────────────────────────────────────
-
 import {
   fetchFrames,
   nearestFrame,
@@ -62,7 +60,6 @@ export class FramePlayer {
     return this.frameSet !== null && this.idx === this.frameSet.nowIndex;
   }
 
-  // ── Loading ───────────────────────────────────────────────────
 
   async ensureDomain(view: Bounds): Promise<void> {
     const next = pickDomain(view, this.frameSet?.domain);
@@ -126,7 +123,6 @@ export class FramePlayer {
     }
   }
 
-  // ── Transport ─────────────────────────────────────────────────
 
   play() {
     if (!this.frameSet) return;
@@ -176,7 +172,6 @@ export class FramePlayer {
     this.#request();
   }
 
-  // ── Double buffering ──────────────────────────────────────────
 
   #request() {
     if (!this.frameSet || this.#inflight) return;

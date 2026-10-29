@@ -89,7 +89,6 @@
         return `left:${left}%;width:${Math.max(width, 4)}%;background:${tempGradient(min, max)}`;
     }
 
-    // Position of the current temperature within today's min–max bar.
     function nowDotStyle(min: number, max: number): string {
         const { lo, span } = tempRange;
         const cur = Math.min(Math.max(data.current.temperature_2m, min), max);

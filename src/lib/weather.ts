@@ -398,7 +398,6 @@ export function loadAutofetch(): boolean {
   }
 }
 
-// ── Offline cache ────────────────────────────────────────────────
 // The service worker's runtime cache already keeps the last Open-Meteo
 // response, but persisting it here too means the UI can rehydrate even
 // before the SW takes control (first hit on a new device, private mode,

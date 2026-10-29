@@ -34,7 +34,6 @@ export type FrameSet = {
   nowIndex: number;
 };
 
-// ── Domain selection ────────────────────────────────────────────
 
 const GLOBAL_DOMAIN = "dwd_icon";
 const REGIONAL_DOMAIN = "dwd_icon_eu";
@@ -67,7 +66,6 @@ export function viewportAround(latitude: number, longitude: number): Bounds {
   return [longitude - 3, latitude - 2, longitude + 3, latitude + 2];
 }
 
-// ── Visible-area data reads ─────────────────────────────────────
 
 const BOUNDS_PAD = 0.25;
 
@@ -85,7 +83,6 @@ export function syncDataBounds(view: Bounds): void {
   updateCurrentBounds(padded(view));
 }
 
-// ── Colour scale ────────────────────────────────────────────────
 
 export const PRECIP_SCALE: RenderableColorScale = (() => {
   const stock = getColorScale(VARIABLES.precipitation, true);
@@ -107,7 +104,6 @@ const OM_PROTOCOL_SETTINGS: OmProtocolSettings = {
   },
 };
 
-// ── Frames ──────────────────────────────────────────────────────
 
 const FRAME_WINDOW_PAST_MS = 2 * 60 * 60 * 1000;
 const FRAME_WINDOW_MAX = 48;
@@ -145,7 +141,6 @@ export function nearestFrame(frames: MapFrame[], epochMs: number): number {
   return best;
 }
 
-// ── Tiles ───────────────────────────────────────────────────────
 
 const MAX_DATA_ZOOM = 12;
 
@@ -224,7 +219,6 @@ export function frameKey(domain: string, frame: MapFrame): string {
   return `${domain}:${frame.validTimeIndex}`;
 }
 
-// ── Basemap ─────────────────────────────────────────────────────
 
 export function basemapSource(): XYZ {
   return new XYZ({

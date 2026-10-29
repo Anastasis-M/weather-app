@@ -1,5 +1,4 @@
-// Lightweight service worker — app shell + runtime caching.
-// Bumps cache version on each deploy by SvelteKit's build hash via filename.
+// VERSION is replaced with a per-deploy timestamp by scripts/inject-sw-version.js.
 const VERSION = "v1";
 const APP_CACHE = `weather-app-${VERSION}`;
 const RUNTIME_CACHE = `weather-runtime-${VERSION}`;

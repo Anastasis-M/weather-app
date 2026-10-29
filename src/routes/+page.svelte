@@ -76,10 +76,8 @@
             .join(" · "),
     );
 
-    // ── Weather map ────────────────────────────────────────────────
     let mapOpen = $state(false);
 
-    // ── Share ──────────────────────────────────────────────────────
     let copied = $state(false);
     let copiedTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -113,7 +111,6 @@
         toast.success(t("copied"));
     }
 
-    // ── Auto-fetch every hour ──────────────────────────────────────
     const AUTOFETCH_MS = 60 * 60 * 1000;
     let intervalId: ReturnType<typeof setInterval> | undefined;
 
@@ -122,7 +119,6 @@
         intervalId = place ? setInterval(refresh, AUTOFETCH_MS) : undefined;
     }
 
-    // ── Pull-to-refresh ────────────────────────────────────────────
     const PULL_THRESHOLD = 64; // damped px needed to arm a refresh
     const PULL_DAMPING = 0.45; // raw drag × damping = visual travel
     const PULL_MAX = 80; // max visual travel in px
@@ -270,7 +266,6 @@
             armInterval(); // reset the 1-hour timer
         } catch (e: any) {
             if (requestId !== loadRequestId) return;
-            // Keep showing whatever we have; only flag the failure.
             error = navigator.onLine
                 ? fetchErrorMessage(e, t("refresh_failed"))
                 : t("offline_cached");
@@ -409,7 +404,6 @@
 <main
     class="safe-pt safe-pb mx-auto min-h-screen w-full max-w-6xl lg:flex lg:h-screen lg:min-h-0 lg:flex-col lg:overflow-hidden"
 >
-    <!-- Pull-to-refresh indicator -->
     <div
         class="flex items-end justify-center overflow-hidden"
         style="height:{pulling || refreshing

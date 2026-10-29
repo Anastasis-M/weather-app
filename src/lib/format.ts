@@ -15,8 +15,6 @@ export function fmtTemp(n: number | null | undefined): string {
   return `${Math.round(n)}°`;
 }
 
-// Compact precipitation amount for hourly tiles — drops the decimal once
-// we cross 10 mm so the label still fits a 56–64px column.
 export function fmtMm(n: number | null | undefined): string {
   if (n == null || Number.isNaN(n)) return '';
   return n >= 10 ? `${Math.round(n)}mm` : `${n.toFixed(1)}mm`;
@@ -52,13 +50,11 @@ export function isSameYMD(aIso: string, bIso: string, tz?: string): boolean {
 
 const COMPASS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
 
-// Returns the *English/key* compass code; pass through t('c.' + code) for localization.
 export function compassCode(deg: number | null | undefined): string {
   if (deg == null) return '';
   return COMPASS[Math.round(deg / 22.5) % 16];
 }
 
-// Beaufort scale from km/h. Returns the integer force (0–12).
 export function kmhToBeaufort(kmh: number | null | undefined): number {
   if (kmh == null || Number.isNaN(kmh)) return 0;
   const v = Math.max(0, kmh);

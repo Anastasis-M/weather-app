@@ -61,7 +61,6 @@ export const load: PageServerLoad = async ({ url, setHeaders }) => {
   const canonical = new URL(`?${new URLSearchParams({ lat, lon, name })}`, url);
   if (canonical.search !== url.search) redirect(308, canonical.pathname + canonical.search);
 
-  // City is the first segment before a comma — used in OG title
   const city = name.split(',')[0].trim() || name;
 
   try {

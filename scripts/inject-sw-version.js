@@ -1,27 +1,14 @@
-/**
- * Post-build script — rewrites the hardcoded VERSION placeholder in
- * the output sw.js with a base-36 timestamp so every deploy gets a
- * unique cache name and stale caches are actually purged on activate.
- *
- * adapter-vercel writes static assets to .vercel/output/static/.
- * Earlier adapter-static wrote to build/, so we check both for
- * resilience.
- *
- * Run automatically via the "build" script in package.json.
- */
+// Stamps the built sw.js with a unique VERSION so each deploy gets a new
+// cache name and the service worker purges the old caches on activate.
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const candidates = [
-  resolve(__dirname, '../.vercel/output/static/sw.js'),
-  resolve(__dirname, '../build/sw.js'),
-];
-const swPath = candidates.find(existsSync);
+const swPath = resolve(__dirname, '../.vercel/output/static/sw.js');
 
-if (!swPath) {
-  console.warn('[inject-sw-version] WARNING: sw.js not found in any of:', candidates);
+if (!existsSync(swPath)) {
+  console.warn(`[inject-sw-version] WARNING: sw.js not found at ${swPath}`);
   process.exit(1);
 }
 
