@@ -14,6 +14,7 @@
   import { t, locale } from '#lib/i18n.svelte.js';
   import { MAX_PLACES, placeId, places } from '#lib/places.svelte.js';
   import type { Location, PlaceSummary } from '#lib/weather.js';
+  import { isSheetOpen, setSheetOpen } from '#lib/sheets.js';
 
   type Props = {
     activeId: string | null;
@@ -29,7 +30,7 @@
   const full = $derived(places.list.length >= MAX_PLACES);
   const LONG_PRESS_MS = 500;
 
-  let managing = $state(false);
+  const managing = $derived(isSheetOpen("places"));
   let limitNote = $state(false);
   let pressTimer: ReturnType<typeof setTimeout> | undefined;
   let pressStart: { x: number; y: number } | null = null;
@@ -40,7 +41,7 @@
     pressStart = { x: e.clientX, y: e.clientY };
     pressTimer = setTimeout(() => {
       longPressed = true;
-      managing = true;
+      setSheetOpen("places", true);
     }, LONG_PRESS_MS);
   }
 
@@ -166,7 +167,7 @@
           <li class="contents">
             <button
               type="button"
-              onclick={() => (managing = true)}
+              onclick={() => setSheetOpen("places", true)}
               class="pressable flex shrink-0 snap-start items-center gap-1.5 self-center px-2 text-xs font-medium text-accent hover:underline"
             >
               <PencilIcon class="size-3.5" />
@@ -185,5 +186,5 @@
       {/if}
     {/if}
   </nav>
-  <ManagePlaces bind:open={managing} />
+  <ManagePlaces bind:open={() => managing, (open) => setSheetOpen("places", open)} />
 {/if}

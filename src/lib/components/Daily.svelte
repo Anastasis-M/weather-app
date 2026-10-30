@@ -22,6 +22,7 @@
     import { fmtTemp, fmtDayShort, fmtDayLong, fmtDate, fmtMm, kmhToBeaufort } from "#lib/format.js";
     import { t, locale } from "#lib/i18n.svelte.js";
     import { CONSENSUS_MODELS, dayForecast, type ConsensusVariable, type Spread, type WeatherData } from "#lib/weather.js";
+    import { isSheetOpen, setSheetOpen } from "#lib/sheets.js";
 
     type Props = { data: WeatherData };
     let { data }: Props = $props();
@@ -33,11 +34,11 @@
     const isDesktop = new MediaQuery("(min-width: 768px)");
 
     let selected = $state(-1);
-    let detailOpen = $state(false);
+    const detailOpen = $derived(isSheetOpen("day"));
 
     function openDay(i: number) {
         selected = i;
-        detailOpen = true;
+        setSheetOpen("day", true);
     }
 
     const spreadOf = (variable: ConsensusVariable, day: string): Spread | null =>
@@ -402,7 +403,7 @@
 {/snippet}
 
 {#if isDesktop.current}
-    <Dialog.Root bind:open={detailOpen}>
+    <Dialog.Root bind:open={() => detailOpen, (open) => setSheetOpen("day", open)}>
         <Dialog.Content class="max-h-[85vh] grid-cols-[minmax(0,1fr)] grid-rows-[auto_auto_minmax(0,1fr)] gap-4 p-5 sm:max-w-2xl">
             {#if selected >= 0}
                 {@render heading(Dialog.Title, Dialog.Description, true)}
@@ -414,7 +415,7 @@
         </Dialog.Content>
     </Dialog.Root>
 {:else}
-    <Drawer.Root bind:open={detailOpen}>
+    <Drawer.Root bind:open={() => detailOpen, (open) => setSheetOpen("day", open)}>
         <Drawer.Content class="max-h-[90dvh]!">
             {#if selected >= 0}
                 <div class="px-4 pt-3 pb-3">{@render heading(Drawer.Title, Drawer.Description, false)}</div>

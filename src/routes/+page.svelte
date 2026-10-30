@@ -1,6 +1,8 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
+    import { page } from "$app/state";
+    import { isSheetOpen, setSheetOpen } from "#lib/sheets.js";
     import { toast } from "svelte-sonner";
     import LanguagesIcon from "@lucide/svelte/icons/languages";
     import RefreshIcon from "@lucide/svelte/icons/refresh-cw";
@@ -78,7 +80,7 @@
             .join(" · "),
     );
 
-    let mapOpen = $state(false);
+    const mapOpen = $derived(isSheetOpen("map"));
 
     let copied = $state(false);
     let copiedTimer: ReturnType<typeof setTimeout> | undefined;
@@ -227,7 +229,7 @@
                 lon: String(loc.longitude),
                 name: loc.shortName,
             });
-            goto(`?${p}`, { shallow: true, replace: true });
+            goto(`?${p}`, { shallow: true, replace: true, state: page.state });
         } catch (e: any) {
             if (requestId !== loadRequestId) return;
             // Offline / network blip — render the last saved forecast so the
@@ -472,7 +474,7 @@
                                 variant="outline"
                                 size="icon"
                                 class="pressable h-11 w-11 rounded-md text-muted-foreground"
-                                onclick={() => mapOpen = true}
+                                onclick={() => setSheetOpen("map", true)}
                                 aria-label={t("map.title")}
                             >
                                 <MapIcon class="size-4.5" />
@@ -629,7 +631,7 @@
                         <MapCard
                             place={place}
                             active={!mapOpen}
-                            onexpand={() => mapOpen = true}
+                            onexpand={() => setSheetOpen("map", true)}
                         />
                     </div>
                 {/if}
@@ -656,5 +658,8 @@
 </main>
 
 {#if place}
-    <MapDialog bind:open={mapOpen} place={place} />
+    <MapDialog
+        bind:open={() => mapOpen, (open) => setSheetOpen("map", open)}
+        place={place}
+    />
 {/if}
