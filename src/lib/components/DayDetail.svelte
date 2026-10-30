@@ -13,7 +13,7 @@
     import { fmtTemp, fmtMm, isSameYMD, kmhToBeaufort } from "#lib/format.js";
     import { t, locale } from "#lib/i18n.svelte.js";
     import { daySummary, type SummaryLine } from "#lib/daySummary.js";
-    import { WIND_MEDIAN, WIND_STRONGEST } from "#lib/dayChart.svelte.js";
+    import { PRECIP_MEDIAN, PRECIP_WETTEST, WIND_MEDIAN, WIND_STRONGEST } from "#lib/dayChart.svelte.js";
     import type { Component } from "svelte";
     import { dayForecast, type Spread, type WeatherData } from "#lib/weather.js";
 
@@ -96,10 +96,15 @@
     </div>
 {/snippet}
 
-{#snippet swatch(color: string, label: string)}
-    <span class="flex items-center gap-1.5">
-        <span class="size-2.5 rounded-[2px]" style="background:{color}"></span>{label}
-    </span>
+{#snippet legend(unit: string, swatches: [color: string, label: string][])}
+    <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+        <span class="mr-auto">{unit}</span>
+        {#each swatches as [color, label] (label)}
+            <span class="flex items-center gap-1.5">
+                <span class="size-2.5 rounded-[2px]" style="background:{color}"></span>{label}
+            </span>
+        {/each}
+    </div>
 {/snippet}
 
 <div class="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 p-0.5 text-sm">
@@ -138,10 +143,10 @@
 
             <Tabs.Content value="rain">
                 {#if metric === "rain"}<PrecipChart {hours} />{/if}
-                <div class="mt-1.5 flex justify-end gap-3 text-[11px] text-muted-foreground">
-                    {@render swatch("var(--color-rain)", t("chart.median"))}
-                    {@render swatch("color-mix(in oklab, var(--color-rain) 30%, transparent)", t("precip.wettest_model"))}
-                </div>
+                {@render legend(t("chart.unit_mm"), [
+                    [PRECIP_MEDIAN, t("chart.median")],
+                    [PRECIP_WETTEST, t("precip.wettest_model")],
+                ])}
                 <dl class="mt-3 grid grid-cols-2 gap-3 border-t border-border/60 pt-3">
                     {@render fact(t("day_total"), fmtMm(forecast.sum), [
                         sumSpread ? t("consensus.range", { low: fmtMm(sumSpread.low), high: fmtMm(sumSpread.high) }) : "",
@@ -153,13 +158,13 @@
 
             <Tabs.Content value="wind">
                 {#if metric === "wind"}<WindChart {hours} />{/if}
-                <div class="mt-1.5 flex justify-end gap-3 text-[11px] text-muted-foreground">
-                    {@render swatch(WIND_MEDIAN, t("chart.median"))}
-                    {@render swatch(WIND_STRONGEST, t("wind.strongest_model"))}
-                </div>
+                {@render legend("km/h", [
+                    [WIND_MEDIAN, t("chart.median")],
+                    [WIND_STRONGEST, t("wind.strongest_model")],
+                ])}
                 <dl class="mt-3 grid grid-cols-2 gap-3 border-t border-border/60 pt-3">
                     {@render fact(t("max_wind"), `${bf} Bf`, [
-                        t("bf." + bf),
+                        `${t("bf." + bf)}, ${Math.round(forecast.wind)} km/h`,
                         windSpread ? t("consensus.models", { count: windSpread.models }) : "",
                     ])}
                     {#if Number.isFinite(forecast.gusts)}

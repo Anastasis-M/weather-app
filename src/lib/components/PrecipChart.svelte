@@ -1,7 +1,7 @@
 <script lang="ts">
     import { BarChart } from "layerchart";
     import * as Chart from "#lib/components/ui/chart/index.js";
-    import { chartEnter, DAY_CHART_PADDING } from "#lib/dayChart.svelte.js";
+    import { BAR_SEAM, chartEnter, DAY_CHART_PADDING, PRECIP_MEDIAN, PRECIP_WETTEST } from "#lib/dayChart.svelte.js";
     import { t } from "#lib/i18n.svelte.js";
     import { fmtHour, fmtMm } from "#lib/format.js";
 
@@ -18,8 +18,8 @@
     );
 
     const series = $derived([
-        { key: "high", label: t("precip.wettest_model"), color: "color-mix(in oklab, var(--color-rain) 30%, transparent)" },
-        { key: "mm", label: t("precip"), color: "var(--color-rain)" },
+        { key: "high", label: t("precip.wettest_model"), color: PRECIP_WETTEST },
+        { key: "mm", label: t("precip"), color: PRECIP_MEDIAN },
     ]);
 
     const config = $derived({
@@ -40,7 +40,7 @@
         bandPadding={0.3}
         {series}
         props={{
-            bars: { motion: chartEnter(), strokeWidth: 0 },
+            bars: { motion: chartEnter(), ...BAR_SEAM },
             xAxis: { format: (d: string) => (parseInt(d) % 6 === 0 ? d : "") },
             yAxis: { format: (d: number) => (d === 0 ? "" : `${d}`), ticks: 3 },
         }}

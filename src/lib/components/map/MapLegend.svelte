@@ -33,7 +33,7 @@
             {/each}
         </div>
         <div
-            class="nums flex w-28 justify-between text-[10px] leading-none text-muted-foreground/80"
+            class="nums flex w-28 justify-between text-[10px] leading-none text-muted-foreground"
         >
             {#each labels as label, i (i)}
                 <span>{label}{i === labels.length - 1 ? " mm" : ""}</span>

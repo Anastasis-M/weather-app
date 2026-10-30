@@ -47,7 +47,7 @@
                 >{/each}
         </p>
         {#if model}
-            <p class="nums mt-2 text-[11px] text-muted-foreground/70">
+            <p class="nums mt-2 text-[11px] text-muted-foreground">
                 {t("map.model")}: {model}
             </p>
         {/if}

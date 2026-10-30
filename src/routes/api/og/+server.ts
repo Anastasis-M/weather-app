@@ -34,7 +34,7 @@ const WMO_EN: Record<string, string> = {
   'wmo.unknown': 'Weather',
 };
 
-// Theme tokens mirroring tailwind.config.js so the card matches the app.
+// Theme tokens mirroring src/app.css so the card matches the app.
 const C = {
   bg: '#0a0a0b',
   panel: '#111114',

@@ -1,7 +1,7 @@
 <script lang="ts">
     import { BarChart } from "layerchart";
     import * as Chart from "#lib/components/ui/chart/index.js";
-    import { chartEnter, DAY_CHART_PADDING, WIND_MEDIAN, WIND_STRONGEST } from "#lib/dayChart.svelte.js";
+    import { BAR_SEAM, chartEnter, DAY_CHART_PADDING, WIND_MEDIAN, WIND_STRONGEST } from "#lib/dayChart.svelte.js";
     import { t } from "#lib/i18n.svelte.js";
     import { fmtHour, kmhToBeaufort } from "#lib/format.js";
 
@@ -40,7 +40,7 @@
         bandPadding={0.3}
         {series}
         props={{
-            bars: { motion: chartEnter(), strokeWidth: 0 },
+            bars: { motion: chartEnter(), ...BAR_SEAM },
             xAxis: { format: (d: string) => (parseInt(d) % 6 === 0 ? d : "") },
             yAxis: { format: (d: number) => (d === 0 ? "" : `${d}`), ticks: 3 },
         }}
