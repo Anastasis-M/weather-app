@@ -19,21 +19,21 @@ export type SkyLook = {
 type Palette = { top: string; bottom: string; cloud: string };
 
 const DAY: Record<'clear' | 'overcast' | 'wet' | 'storm' | 'fog' | 'snow', Palette> = {
-  clear:    { top: '#1f5a9e', bottom: '#0f2c52', cloud: '#8796ab' },
-  overcast: { top: '#3a4656', bottom: '#1a212b', cloud: '#5d6878' },
-  wet:      { top: '#2a3340', bottom: '#121820', cloud: '#4a5463' },
-  storm:    { top: '#241f36', bottom: '#0d0b16', cloud: '#3b3550' },
-  fog:      { top: '#4a5059', bottom: '#252a31', cloud: '#6c737d' },
-  snow:     { top: '#46505f', bottom: '#222833', cloud: '#7d8796' },
+  clear:    { top: '#3a7cc4', bottom: '#1b4a80', cloud: '#a3b2c6' },
+  overcast: { top: '#56657a', bottom: '#2c3644', cloud: '#7b8797' },
+  wet:      { top: '#3f4c5e', bottom: '#1f2833', cloud: '#637083' },
+  storm:    { top: '#3a3352', bottom: '#1a1626', cloud: '#554d70' },
+  fog:      { top: '#687079', bottom: '#3a4049', cloud: '#8d949e' },
+  snow:     { top: '#66748a', bottom: '#364152', cloud: '#a0aab8' },
 };
 
 const NIGHT: typeof DAY = {
-  clear:    { top: '#060b1c', bottom: '#0f1a35', cloud: '#2a3448' },
-  overcast: { top: '#0f141c', bottom: '#171d27', cloud: '#2b323d' },
-  wet:      { top: '#0b0f15', bottom: '#121820', cloud: '#262d38' },
-  storm:    { top: '#120f1e', bottom: '#08070e', cloud: '#2a2540' },
-  fog:      { top: '#171b21', bottom: '#0f1217', cloud: '#343a43' },
-  snow:     { top: '#141a25', bottom: '#1c2330', cloud: '#3a4352' },
+  clear:    { top: '#0f1d3d', bottom: '#1d2f57', cloud: '#3a4762' },
+  overcast: { top: '#1c2430', bottom: '#262f3d', cloud: '#3d4654' },
+  wet:      { top: '#161d27', bottom: '#1e2632', cloud: '#363f4c' },
+  storm:    { top: '#1f1a33', bottom: '#110f1c', cloud: '#3a3456' },
+  fog:      { top: '#262c34', bottom: '#1a1e25', cloud: '#4a515c' },
+  snow:     { top: '#222b3a', bottom: '#2c3546', cloud: '#4e5869' },
 };
 
 const SUN_GLOW = '#ffd27a';

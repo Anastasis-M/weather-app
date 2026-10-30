@@ -2,18 +2,13 @@
     import { MediaQuery } from "svelte/reactivity";
     import { skyFor } from "#lib/wmo.js";
     import { rgbToCss, skyLook } from "#lib/sky.js";
+    import { hasWebgl } from "#lib/webgl.js";
 
     type Props = { code: number | null; isDay: boolean };
     let { code, isDay }: Props = $props();
 
     const look = $derived(skyLook(skyFor(code ?? 3), isDay));
     const reducedMotion = new MediaQuery("(prefers-reduced-motion: reduce)");
-
-    function hasWebgl(): boolean {
-        const gl = document.createElement("canvas").getContext("webgl2");
-        gl?.getExtension("WEBGL_lose_context")?.loseContext();
-        return gl != null;
-    }
     const webgl = hasWebgl();
 </script>
 

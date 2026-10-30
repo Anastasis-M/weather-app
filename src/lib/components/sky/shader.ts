@@ -131,7 +131,7 @@ void main() {
 
   col += vec3(0.5, 0.52, 0.68) * uFlash * (0.35 + 0.65 * uv.y);
 
-  col *= 1.0 - 0.22 * length(uv - vec2(0.5, 0.65));
+  col *= 1.0 - 0.14 * length(uv - vec2(0.5, 0.65));
   col += (hash(gl_FragCoord.xy + fract(uTime)) - 0.5) / 255.0;
 
   gl_FragColor = vec4(col, 1.0);

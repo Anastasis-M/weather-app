@@ -6,6 +6,7 @@
   import { localNowMs, sunState } from '#lib/sun.js';
   import { moonLitPath, moonPhase } from '#lib/moon.js';
   import type { WeatherData } from '#lib/weather.js';
+  import { hasWebgl } from '#lib/webgl.js';
 
   type Props = { data: WeatherData };
   let { data }: Props = $props();
@@ -44,7 +45,8 @@
   const progress = $derived(sun?.progress ?? 0);
   const night = $derived(sun?.phase === 'night');
   const moon = $derived(moonPhase(clock));
-  const MOON_R = 7;
+  const MOON_R = 12;
+  const webgl = hasWebgl();
   const southern = $derived((data.latitude ?? 0) < 0);
   const dot = $derived(point(progress));
   const travelled = $derived(arc(progress));
@@ -79,58 +81,75 @@
           </span>
         </div>
 
-        <svg
-          viewBox="0 0 {W} {H}"
-          class="mt-1 w-full overflow-visible"
-          role="img"
-          aria-label={night
-            ? t('moon.position', { phase: t(`moon.${moon.key}`), lit: Math.round(moon.illumination * 100) })
-            : t('sun.position')}
-        >
-          <defs>
-            <linearGradient id="sun-sky" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="var(--color-warn)" stop-opacity="0.32" />
-              <stop offset="100%" stop-color="var(--color-warn)" stop-opacity="0" />
-            </linearGradient>
-            <linearGradient id="moon-sky" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="var(--color-snow)" stop-opacity="0.16" />
-              <stop offset="100%" stop-color="var(--color-snow)" stop-opacity="0" />
-            </linearGradient>
-            <radialGradient id="sun-glow">
-              <stop offset="0%" stop-color="var(--color-warn)" stop-opacity="0.55" />
-              <stop offset="100%" stop-color="var(--color-warn)" stop-opacity="0" />
-            </radialGradient>
-            <radialGradient id="moon-glow">
-              <stop offset="0%" stop-color="var(--color-snow)" stop-opacity="0.35" />
-              <stop offset="100%" stop-color="var(--color-snow)" stop-opacity="0" />
-            </radialGradient>
-          </defs>
-          <path d={arc(1)} fill="none" stroke="var(--color-line)" stroke-width="1.5" stroke-dasharray="3 5" stroke-linecap="round" />
-          <line x1="6" x2={W - 6} y1={BASE} y2={BASE} stroke="var(--color-line)" stroke-width="1" />
-          <path d={fill} fill={night ? 'url(#moon-sky)' : 'url(#sun-sky)'} />
-          <path
-            d={travelled}
-            fill="none"
-            stroke={night ? 'var(--color-snow)' : 'var(--color-warn)'}
-            stroke-opacity={night ? 0.55 : 1}
-            stroke-width="2.5"
-            stroke-linecap="round"
-          />
-          <circle cx={PAD} cy={BASE} r="2.5" fill={night ? 'var(--color-snow)' : 'var(--color-warn)'} />
-          <circle cx={W - PAD} cy={BASE} r="2.5" fill="var(--color-mute)" />
-          {#if night}
-            <circle cx={dot.x} cy={dot.y} r="18" fill="url(#moon-glow)" />
-            <circle cx={dot.x} cy={dot.y} r={MOON_R} fill="var(--color-line)" stroke="var(--color-mute)" stroke-width="0.75" />
+        <div class="relative mt-1">
+          <svg
+            viewBox="0 0 {W} {H}"
+            class="w-full overflow-visible"
+            role="img"
+            aria-label={night
+              ? t('moon.position', { phase: t(`moon.${moon.key}`), lit: Math.round(moon.illumination * 100) })
+              : t('sun.position')}
+          >
+            <defs>
+              <linearGradient id="sun-sky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--color-warn)" stop-opacity="0.32" />
+                <stop offset="100%" stop-color="var(--color-warn)" stop-opacity="0" />
+              </linearGradient>
+              <linearGradient id="moon-sky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--color-snow)" stop-opacity="0.16" />
+                <stop offset="100%" stop-color="var(--color-snow)" stop-opacity="0" />
+              </linearGradient>
+              <radialGradient id="sun-glow">
+                <stop offset="0%" stop-color="var(--color-warn)" stop-opacity="0.55" />
+                <stop offset="100%" stop-color="var(--color-warn)" stop-opacity="0" />
+              </radialGradient>
+              <radialGradient id="moon-glow">
+                <stop offset="0%" stop-color="var(--color-snow)" stop-opacity="0.35" />
+                <stop offset="100%" stop-color="var(--color-snow)" stop-opacity="0" />
+              </radialGradient>
+            </defs>
+            <path d={arc(1)} fill="none" stroke="var(--color-line)" stroke-width="1.5" stroke-dasharray="3 5" stroke-linecap="round" />
+            <line x1="6" x2={W - 6} y1={BASE} y2={BASE} stroke="var(--color-line)" stroke-width="1" />
+            <path d={fill} fill={night ? 'url(#moon-sky)' : 'url(#sun-sky)'} />
             <path
-              d={moonLitPath(moon.cycle, dot.x, dot.y, MOON_R)}
-              fill="var(--color-snow)"
-              transform={southern ? `matrix(-1 0 0 1 ${2 * dot.x} 0)` : undefined}
+              d={travelled}
+              fill="none"
+              stroke={night ? 'var(--color-snow)' : 'var(--color-warn)'}
+              stroke-opacity={night ? 0.55 : 1}
+              stroke-width="2.5"
+              stroke-linecap="round"
             />
-          {:else}
-            <circle cx={dot.x} cy={dot.y} r="18" fill="url(#sun-glow)" />
-            <circle cx={dot.x} cy={dot.y} r="6.5" fill="var(--color-warn)" />
+            <circle cx={PAD} cy={BASE} r="2.5" fill={night ? 'var(--color-snow)' : 'var(--color-warn)'} />
+            <circle cx={W - PAD} cy={BASE} r="2.5" fill="var(--color-mute)" />
+            {#if night}
+              <circle cx={dot.x} cy={dot.y} r="26" fill="url(#moon-glow)" />
+              {#if !webgl}
+                <circle cx={dot.x} cy={dot.y} r={MOON_R} fill="var(--color-line)" stroke="var(--color-mute)" stroke-width="0.75" />
+                <path
+                  d={moonLitPath(moon.cycle, dot.x, dot.y, MOON_R)}
+                  fill="var(--color-snow)"
+                  transform={southern ? `matrix(-1 0 0 1 ${2 * dot.x} 0)` : undefined}
+                />
+              {/if}
+            {:else}
+              <circle cx={dot.x} cy={dot.y} r="18" fill="url(#sun-glow)" />
+              <circle cx={dot.x} cy={dot.y} r="6.5" fill="var(--color-warn)" />
+            {/if}
+          </svg>
+          {#if night && webgl}
+            {#await import('./moon/MoonGlobe.svelte') then { default: MoonGlobe }}
+              <div
+                class="pointer-events-none absolute aspect-square -translate-x-1/2 -translate-y-1/2"
+                style:left="{(dot.x / W) * 100}%"
+                style:top="{(dot.y / H) * 100}%"
+                style:width="{((2 * MOON_R) / W) * 100}%"
+                aria-hidden="true"
+              >
+                <MoonGlobe cycle={moon.cycle} {southern} />
+              </div>
+            {/await}
           {/if}
-        </svg>
+        </div>
 
         <div class="nums -mt-0.5 flex justify-between text-xs text-muted-foreground">
           {#if night}
