@@ -15,6 +15,7 @@
     import { daySummary, type SummaryLine } from "#lib/daySummary.js";
     import { PRECIP_MEDIAN, PRECIP_WETTEST, WIND_MEDIAN, WIND_STRONGEST } from "#lib/dayChart.svelte.js";
     import type { Component } from "svelte";
+    import { on } from "svelte/events";
     import { dayForecast, type Spread, type WeatherData } from "#lib/weather.js";
 
     type Metric = "temp" | "rain" | "wind";
@@ -54,6 +55,8 @@
     );
 
     const ICON_EVERY = 3;
+
+    const keepPointerFromDrawer = (node: HTMLElement) => on(node, "pointerdown", (e) => e.stopPropagation());
 
     const LOOK: Record<SummaryLine["kind"], { icon: Component; tone: string; bg: string }> = {
         temp: { icon: ThermometerIcon, tone: "text-warn", bg: "bg-warn/10" },
@@ -115,7 +118,11 @@
             <Tabs.Trigger value="wind">{t("wind")}</Tabs.Trigger>
         </Tabs.List>
 
-        <section class="weather-card rounded-lg p-3" data-vaul-no-drag>
+        <section
+            class="weather-card rounded-lg p-3"
+            data-vaul-no-drag
+            {@attach keepPointerFromDrawer}
+        >
             <ol
                 class="mb-1 grid pr-1 pl-5"
                 style="grid-template-columns: repeat({hours.length}, minmax(0, 1fr))"
