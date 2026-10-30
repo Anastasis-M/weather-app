@@ -162,17 +162,16 @@
     class="select-none px-5 pb-8 lg:px-0 lg:pb-0 lg:flex lg:min-h-0 lg:flex-none lg:flex-col"
 >
     <Card.Root
-        size="sm"
         class="weather-card gap-0 rounded-lg py-0 lg:min-h-0 lg:flex-1 lg:overflow-hidden"
     >
-        <Card.Header class="border-b border-border/70 px-3 pb-2.5! lg:shrink-0">
+        <Card.Header class="border-b border-border/70 px-4 pt-4 pb-3! sm:px-5 lg:shrink-0">
             <div class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
                 <Card.Title class="section-title">
                     {t("forecast_7d")}
                 </Card.Title>
                 {#if modelCount >= 2}
                     <div class="flex items-baseline gap-0.5 whitespace-nowrap">
-                        <span class="text-[11px] text-muted-foreground/70">
+                        <span class="text-[11px] text-muted-foreground">
                             {t("consensus.models", { count: modelCount })}
                         </span>
                         <Popover.Root>
@@ -215,7 +214,7 @@
                 {/if}
             </div>
         </Card.Header>
-        <div class="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+        <div class="pb-1.5 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
         {#each daily.time as day, i}
             {@const w = describe(daily.weather_code[i], 1)}
             {@const { min, max, sum, wind, gusts, band, sumSpread, windSpread, models } = days[i]}
@@ -241,7 +240,7 @@
                     <WindIcon aria-hidden="true" />
                     <span aria-hidden="true">{dayBf} Bf</span>
                     {#if windDisagrees(windSpread)}
-                        <span class="font-normal text-muted-foreground/60" aria-hidden="true"
+                        <span class="font-normal" aria-hidden="true"
                             >{kmhToBeaufort(windSpread!.low)}–{kmhToBeaufort(windSpread!.high)}</span
                         >
                     {/if}
@@ -261,7 +260,7 @@
                     <CloudRainIcon />
                     {rainLabel(sum, pop)}
                     {#if rainDisagrees(sumSpread)}
-                        <span class="font-normal text-rain/60"
+                        <span class="font-normal"
                             >{Math.round(sumSpread!.low)}–{Math.round(sumSpread!.high)}</span
                         >
                     {/if}
@@ -279,7 +278,7 @@
                             openDay(i);
                         }
                     }}
-                    class="grid w-full cursor-pointer select-none grid-cols-[52px_26px_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 px-3 py-2 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50 active:bg-muted/55 min-[460px]:min-h-[56px] min-[460px]:py-0 sm:grid-cols-[62px_28px_minmax(0,1fr)_auto] lg:grid-cols-[84px_28px_minmax(0,1fr)_auto] lg:gap-3 xl:grid-cols-[84px_28px_128px_minmax(0,1fr)_auto]"
+                    class="grid w-full cursor-pointer select-none grid-cols-[52px_26px_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 px-4 py-2 text-left sm:px-5 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50 active:bg-muted/55 min-[460px]:min-h-[56px] min-[460px]:py-0 sm:grid-cols-[62px_28px_minmax(0,1fr)_auto] lg:grid-cols-[84px_28px_minmax(0,1fr)_auto] lg:gap-3 xl:grid-cols-[84px_28px_128px_minmax(0,1fr)_auto]"
                 >
                     <div>
                         <div
@@ -291,7 +290,7 @@
                                 ? t("today")
                                 : fmtDayShort(day, tz, locale())}
                         </div>
-                        <div class="text-[11px] text-muted-foreground/70 nums">
+                        <div class="text-[11px] text-muted-foreground nums">
                             {fmtDate(day, tz, locale())}
                         </div>
                     </div>

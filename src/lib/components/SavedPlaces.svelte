@@ -83,7 +83,7 @@
   <nav aria-label={t('places.title')} class="mb-3 px-5">
     {#if empty}
       <div class="flex gap-2">
-        <div class="weather-card flex min-w-0 flex-1 items-center gap-3 rounded-lg border border-dashed border-line px-3.5 py-3">
+        <div class="weather-card flex min-w-0 flex-1 items-center gap-3 rounded-lg border border-dashed border-line px-4 py-3">
           <StarIcon class="size-5 shrink-0 text-accent" />
           <div class="min-w-0 text-sm">
             <div class="font-medium">{t('places.empty_title')}</div>

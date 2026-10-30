@@ -41,12 +41,12 @@
 </script>
 
 {#if umbrella || result.tips.length}
-  <section class="px-5 pb-4 lg:px-0 lg:pb-0 lg:pt-3">
+  <section class="px-5 pb-3 lg:px-0 lg:pb-0 lg:pt-3">
     <Card.Root class="weather-card gap-0 rounded-lg py-0">
-      <Card.Header class="px-4 pt-3.5 pb-3 sm:px-5">
+      <Card.Header class="px-4 pt-4 pb-3 sm:px-5">
         <Card.Title class="section-title">{t('tips.title')}</Card.Title>
       </Card.Header>
-      <Card.Content class="px-4 pb-3.5 sm:px-5">
+      <Card.Content class="px-4 pb-4 sm:px-5">
         {#if umbrella}
           <div class="flex items-start gap-3">
             <div class="grid size-8 shrink-0 place-items-center rounded-md bg-rain/10">

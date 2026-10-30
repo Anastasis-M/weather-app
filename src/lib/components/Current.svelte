@@ -44,9 +44,9 @@
   }
 </script>
 
-<section class="px-5 pb-4 lg:px-0 lg:pb-0">
-  <Card.Root size="sm" class="weather-card rounded-lg py-0">
-    <Card.Header class="px-4 pt-3.5 pb-0 sm:px-5">
+<section class="px-5 pb-3 lg:px-0 lg:pb-0">
+  <Card.Root class="weather-card gap-4 rounded-lg py-0">
+    <Card.Header class="px-4 pt-4 pb-0 sm:px-5">
       <div class="flex flex-wrap items-start justify-between gap-2.5">
         <div class="min-w-0 flex-1">
           <div class="flex items-start gap-2">
@@ -83,10 +83,10 @@
       </div>
     </Card.Header>
 
-    <Card.Content class="px-4 pb-3.5 pt-2 sm:px-5">
+    <Card.Content class="px-4 pb-4 pt-0 sm:px-5">
       <div class="flex items-center justify-between gap-4">
         <div class="min-w-0">
-          <div class="nums text-[62px] font-light leading-none tracking-tight sm:text-[70px] lg:text-[72px]">
+          <div class="nums text-[76px] font-extralight leading-none tracking-tight sm:text-[88px] lg:text-[92px]">
             {fmtTemp(c.temperature_2m)}
           </div>
           <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
@@ -108,7 +108,7 @@
           <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
             <WindIcon class="size-3.5" /> {t('wind')}
           </div>
-          <div class="nums mt-0.5 truncate text-[15px]">
+          <div class="nums mt-0.5 text-[15px]">
             {bf}<span class="text-sm text-muted-foreground"> Bf</span>
             {#if dir}<span class="ml-1 text-xs text-muted-foreground">{t('c.' + dir)}</span>{/if}
             <span class="ml-1 text-xs text-muted-foreground">{t('bf.' + bf)}</span>
@@ -118,10 +118,10 @@
           <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
             <GaugeIcon class="size-3.5 {air.tone}" /> {t('air_quality')}
           </div>
-          <div class="mt-0.5 flex items-center gap-1.5 truncate">
+          <div class="mt-0.5 flex flex-wrap items-baseline gap-x-1.5">
             {#if air.value != null}
               <span class="nums text-[15px]">{air.value}</span>
-              <span class="truncate text-xs {air.tone}">{t(air.key)}</span>
+              <span class="text-xs {air.tone}">{t(air.key)}</span>
               {#if air.pm25 != null}<span class="nums text-xs text-muted-foreground">PM2.5 {air.pm25.toFixed(1)}</span>{/if}
             {:else}
               <span class="text-base text-muted-foreground">—</span>

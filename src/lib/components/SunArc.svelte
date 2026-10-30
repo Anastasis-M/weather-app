@@ -59,9 +59,9 @@
 </script>
 
 {#if sun}
-  <section class="px-5 pb-4 lg:px-0 lg:pb-0 lg:pt-3">
+  <section class="px-5 pb-3 lg:px-0 lg:pb-0 lg:pt-3">
     <Card.Root class="weather-card gap-0 rounded-lg py-0">
-      <Card.Content class="px-4 pt-3.5 pb-3 sm:px-5">
+      <Card.Content class="px-4 pt-4 pb-4 sm:px-5">
         <div class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
           <span class="font-medium">
             {#if sun.phase === 'day'}

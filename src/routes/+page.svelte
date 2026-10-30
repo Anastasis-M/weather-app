@@ -18,6 +18,7 @@
     import Tips from "#lib/components/Tips.svelte";
     import SavedPlaces from "#lib/components/SavedPlaces.svelte";
     import SunArc from "#lib/components/SunArc.svelte";
+    import Sky from "#lib/components/sky/Sky.svelte";
     import { Button } from "#lib/components/ui/button/index.js";
     import { Badge } from "#lib/components/ui/badge/index.js";
     import * as Alert from "#lib/components/ui/alert/index.js";
@@ -53,6 +54,7 @@
     let loadingLocation = $state<Location | null>(null);
     let showingCachedAt = $state<number | null>(null);
     let refreshing = $state(false);
+    let scrolled = $state(false);
     let error = $state("");
     let updated = $state<Date | null>(null);
     let loadRequestId = 0;
@@ -401,6 +403,9 @@
     });
 </script>
 
+<svelte:window onscroll={() => (scrolled = window.scrollY > 0)} />
+<Sky code={data?.current.weather_code ?? null} isDay={data?.current.is_day === 1} />
+
 <main
     class="safe-pt safe-pb mx-auto min-h-screen w-full max-w-6xl lg:flex lg:h-screen lg:min-h-0 lg:flex-col lg:overflow-hidden"
 >
@@ -427,9 +432,13 @@
         </Badge>
     </div>
 
-    <header
-        class="sticky top-0 z-20 bg-background/85 px-5 pt-4 pb-2 backdrop-blur-md mb-2"
-    >
+    <header class="sticky top-0 z-20 px-5 pt-4 pb-2 mb-2">
+        <div
+            class="pointer-events-none absolute inset-x-0 top-0 -bottom-4 -z-10 bg-background/45 backdrop-blur-xl mask-b-from-60% transition-opacity duration-200 lg:hidden {scrolled
+                ? 'opacity-100'
+                : 'opacity-0'}"
+            aria-hidden="true"
+        ></div>
         <div class="relative flex items-center gap-2">
             <div class="flex-1 min-w-0">
                 <Search bind:this={search} onSelect={load} onLocate={locate} />
@@ -441,12 +450,12 @@
                             {...props}
                             variant="outline"
                             size="icon"
-                            class="pressable h-11 w-auto rounded-md px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground nums"
+                            class="pressable h-11 w-auto rounded-md px-3 text-xs font-medium text-muted-foreground"
                             onclick={toggleLang}
                             aria-label={t("language")}
                         >
-                            <LanguagesIcon class="size-4" />
-                            <span class="ml-1"
+                            <LanguagesIcon class="hidden size-4 sm:block" />
+                            <span class="sm:ml-1"
                                 >{i18n.lang === "en" ? "EN" : "ΕΛ"}</span
                             >
                         </Button>
@@ -597,9 +606,9 @@
             </div>
         {/if}
         <div
-            class="mt-1 lg:grid lg:grid-cols-[minmax(340px,420px)_minmax(0,1fr)] lg:gap-4 lg:px-5 lg:flex-1 lg:min-h-0"
+            class="mt-1 lg:grid lg:grid-cols-[minmax(340px,420px)_minmax(0,1fr)] lg:gap-3 lg:px-5 lg:flex-1 lg:min-h-0"
         >
-            <div class="no-scrollbar lg:h-full lg:min-h-0 lg:overflow-y-auto lg:p-px">
+            <div class="no-scrollbar lg:-mx-px lg:h-full lg:min-h-0 lg:overflow-y-auto lg:p-px">
                 <Current
                     data={data}
                     place={place}
@@ -610,7 +619,7 @@
                 <SunArc data={data} />
             </div>
             <div
-                class="no-scrollbar lg:flex lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-col lg:overflow-y-auto lg:p-px"
+                class="no-scrollbar lg:-mx-px lg:flex lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-col lg:overflow-y-auto lg:p-px"
             >
                 <Daily data={data} />
                 {#if place && showMap}
@@ -627,7 +636,7 @@
             </div>
         </div>
         <footer
-            class="px-5 pb-8 text-center text-[11px] text-muted-foreground/70 lg:pt-2"
+            class="px-5 pb-8 text-center text-[11px] text-muted-foreground lg:pt-2"
         >
             {#if updated}{t("updated")}
                 {updated.toLocaleTimeString(locale(), {
@@ -637,7 +646,7 @@
             {/if}
             {t("powered_by")}
             <a
-                class="hover:text-muted-foreground underline-offset-2 hover:underline"
+                class="underline-offset-2 hover:text-foreground hover:underline"
                 href="https://open-meteo.com"
                 target="_blank"
                 rel="noopener noreferrer">Open-Meteo</a

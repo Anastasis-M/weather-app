@@ -1,29 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn-svelte/tailwind.css";
-/*
-  ---break---
-*/
+
 @custom-variant dark (&:is(.dark *));
 
-@config '../tailwind.config.js';
-
-/*
-  The default border color has changed to `currentcolor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
 @layer base {
-    *,
-    ::after,
-    ::before,
-    ::backdrop,
-    ::file-selector-button {
-        border-color: var(--color-gray-200, currentcolor);
-    }
     * {
         @apply border-border outline-ring/50;
     }
@@ -55,11 +36,11 @@
 }
 
 @utility hairline {
-    box-shadow: inset 0 0 0 1px #22222a;
+    box-shadow: inset 0 0 0 1px var(--border);
 }
 
 @utility section-title {
-    @apply text-xs font-medium uppercase tracking-wider text-muted-foreground;
+    @apply text-sm font-medium text-foreground;
     text-wrap: balance;
 }
 
@@ -85,44 +66,27 @@
     :root {
         color-scheme: dark;
         -webkit-tap-highlight-color: transparent;
-        --background: oklch(1 0 0);
-        --foreground: oklch(0.145 0 0);
-        --card: oklch(1 0 0);
-        --card-foreground: oklch(0.145 0 0);
-        --popover: oklch(1 0 0);
-        --popover-foreground: oklch(0.145 0 0);
-        --primary: oklch(0.205 0 0);
-        --primary-foreground: oklch(0.985 0 0);
-        --secondary: oklch(0.97 0 0);
-        --secondary-foreground: oklch(0.205 0 0);
-        --muted: oklch(0.97 0 0);
-        --muted-foreground: oklch(0.556 0 0);
+        --background: #070a10;
+        --foreground: #f4f6fb;
+        --card: rgb(8 11 18 / 0.64);
+        --card-foreground: #f4f6fb;
+        --popover: #111622;
+        --popover-foreground: #f4f6fb;
+        --primary: #f4f6fb;
+        --primary-foreground: #070a10;
+        --secondary: rgb(255 255 255 / 0.07);
+        --secondary-foreground: #f4f6fb;
+        --muted: rgb(255 255 255 / 0.07);
+        --muted-foreground: #b4bdcc;
         --accent: #fbbf24;
-        --accent-foreground: #0a0a0b;
-        --destructive: oklch(0.577 0.245 27.325);
-        --border: oklch(0.922 0 0);
-        --input: oklch(0.922 0 0);
-        --ring: oklch(0.708 0 0);
-        --chart-1: oklch(0.87 0 0);
-        --chart-2: oklch(0.556 0 0);
-        --chart-3: oklch(0.439 0 0);
-        --chart-4: oklch(0.371 0 0);
-        --chart-5: oklch(0.269 0 0);
-        --radius: 0.625rem;
-        --sidebar: oklch(0.985 0 0);
-        --sidebar-foreground: oklch(0.145 0 0);
-        --sidebar-primary: oklch(0.205 0 0);
-        --sidebar-primary-foreground: oklch(0.985 0 0);
-        --sidebar-accent: oklch(0.97 0 0);
-        --sidebar-accent-foreground: oklch(0.205 0 0);
-        --sidebar-border: oklch(0.922 0 0);
-        --sidebar-ring: oklch(0.708 0 0);
-        --shadow-border:
-            0 0 0 1px rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06),
-            0 2px 4px 0 rgba(0, 0, 0, 0.04);
-        --shadow-border-hover:
-            0 0 0 1px rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.08),
-            0 2px 4px 0 rgba(0, 0, 0, 0.06);
+        --accent-foreground: #070a10;
+        --destructive: oklch(0.704 0.191 22.216);
+        --border: rgb(255 255 255 / 0.09);
+        --input: rgb(255 255 255 / 0.12);
+        --ring: #8b95a7;
+        --radius: 1rem;
+        --shadow-border: 0 0 0 1px rgb(255 255 255 / 0.07);
+        --shadow-border-hover: 0 0 0 1px rgb(255 255 255 / 0.14);
     }
     html,
     body {
@@ -130,10 +94,7 @@
     }
     body {
         min-height: 100vh;
-        background: var(--background);
         text-wrap: pretty;
-        /* Dashboard text isn't for copying — keep long-presses near the
-           charts from triggering selection callouts on touch devices. */
         -webkit-user-select: none;
         user-select: none;
         -webkit-touch-callout: none;
@@ -148,7 +109,7 @@
         width: 6px;
     }
     *::-webkit-scrollbar-thumb {
-        background: #2a2a32;
+        background: rgb(255 255 255 / 0.15);
         border-radius: 999px;
     }
     *::-webkit-scrollbar-track {
@@ -169,72 +130,11 @@
     }
 }
 
-/*
-  ---break---
-*/
-
-.dark {
-    --background: #0a0a0b;
-    --foreground: #f5f5f7;
-    --card: #111114;
-    --card-foreground: #f5f5f7;
-    --popover: #111114;
-    --popover-foreground: #f5f5f7;
-    --primary: #f5f5f7;
-    --primary-foreground: #0a0a0b;
-    --secondary: #17171c;
-    --secondary-foreground: #f5f5f7;
-    --muted: #17171c;
-    --muted-foreground: #a0a0aa;
-    --accent: #fbbf24;
-    --accent-foreground: #0a0a0b;
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: #22222a;
-    --input: #22222a;
-    --ring: #6b6b75;
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
-    --shadow-border: 0 0 0 1px rgba(255, 255, 255, 0.08);
-    --shadow-border-hover: 0 0 0 1px rgba(255, 255, 255, 0.13);
-}
-
-/*
-  ---break---
-*/
-
 @theme inline {
     --font-sans: "Inter Variable", sans-serif;
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
-    --color-bg: #0a0a0b;
-    --color-panel: #111114;
-    --color-panel2: #17171c;
-    --color-line: #22222a;
-    --color-ink: #f5f5f7;
-    --color-sub: #a0a0aa;
-    --color-mute: #6b6b75;
+    --color-line: rgb(255 255 255 / 0.12);
+    --color-sub: #b4bdcc;
+    --color-mute: #7d8697;
     --color-rain: #60a5fa;
     --color-snow: #bae6fd;
     --color-warn: #f59e0b;
