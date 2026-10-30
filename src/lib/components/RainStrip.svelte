@@ -35,6 +35,7 @@
         {data}
         x="hour"
         yDomain={[0, yMax]}
+        padding={{ top: 4, left: 44, bottom: 20, right: 4 }}
         highlight={{ area: true, motion: "none" }}
         bandPadding={0.2}
         series={[{ key: "mm", label: t("precip") }]}
@@ -43,6 +44,7 @@
         cRange={COLORS}
         grid={false}
         props={{
+            bars: { strokeWidth: 0 },
             xAxis: { format: (d: string) => (tickHours.has(d) ? d : "") },
             yAxis: { format: (d: number) => (d === 0 ? "" : `${d}mm`), ticks: 2 },
         }}
