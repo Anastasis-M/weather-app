@@ -64,7 +64,7 @@
         nextFlash -= delta;
         if (shown.storm > 0.5 && nextFlash < 0) {
             flash = 1;
-            nextFlash = 4 + Math.random() * 9;
+            nextFlash = 2.5 + Math.random() * 5.5;
         }
         flash = Math.max(0, flash - delta * 2.5);
         const flicker = flash > 0.55 && flash < 0.75 ? 0.35 : 1;

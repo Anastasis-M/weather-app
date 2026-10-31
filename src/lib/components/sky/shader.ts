@@ -52,12 +52,16 @@ float fbm(vec2 p) {
 
 float clouds(vec2 p, float drift, float scale) {
   vec2 q = p * scale + vec2(uTime * drift, 0.0);
-  vec2 warp = vec2(fbm(q + vec2(0.0, uTime * 0.01)), fbm(q + vec2(5.2, 1.3)));
+  vec2 warp = vec2(fbm(q + vec2(0.0, uTime * 0.035)), fbm(q + vec2(5.2, 1.3) - uTime * 0.02));
   return fbm(q + warp * 1.4);
 }
 
+float gust() {
+  return 0.12 + 0.08 * sin(uTime * 0.35) + 0.04 * sin(uTime * 1.1);
+}
+
 float rainLayer(vec2 p, float scale, float speed, float len) {
-  p.x += p.y * 0.12;
+  p.x += p.y * gust();
   vec2 g = vec2(p.x * scale, p.y * scale * 0.08 + uTime * speed);
   vec2 id = floor(g);
   vec2 f = fract(g);
@@ -70,7 +74,7 @@ float rainLayer(vec2 p, float scale, float speed, float len) {
 }
 
 float snowLayer(vec2 p, float scale, float speed, float size) {
-  vec2 g = p * scale + vec2(0.0, uTime * speed);
+  vec2 g = p * scale + vec2(uTime * 0.25 + sin(uTime * 0.3) * 0.8, uTime * speed);
   vec2 id = floor(g);
   vec2 f = fract(g) - 0.5;
   float h = hash(id);
@@ -99,27 +103,37 @@ void main() {
 
   vec2 sunPos = vec2(aspect * 0.84, 0.94);
   float d = length(p - sunPos);
-  float glow = exp(-d * 3.5) * 0.22 + exp(-d * 16.0) * 0.28;
+  float glow = (exp(-d * 3.5) * 0.22 + exp(-d * 16.0) * 0.28) * (1.0 + 0.08 * sin(uTime * 0.6));
   col += uGlow * glow * uSun * (1.0 - uCover * 0.85);
 
+  float day = smoothstep(0.6, 1.0, uSun);
+  if (day > 0.001) {
+    vec2 dir = p - sunPos;
+    float ang = atan(dir.y, dir.x);
+    float rays = (sin(ang * 9.0 + uTime * 0.21) + sin(ang * 14.0 - uTime * 0.17) + sin(ang * 23.0 + uTime * 0.31)) / 6.0 + 0.5;
+    col += uGlow * pow(rays, 3.0) * exp(-d * 1.6) * 0.16 * day * (1.0 - uCover);
+  }
+
   float threshold = mix(0.8, 0.28, uCover);
-  float back = clouds(p, 0.006, 1.1);
+  float back = clouds(p, 0.018, 1.1);
   float backMask = smoothstep(threshold - 0.12, threshold + 0.22, back) * smoothstep(-0.2, 0.7, uv.y);
   col = mix(col, uCloud * (0.62 + 0.25 * back), backMask * 0.75);
-  float front = clouds(p + vec2(3.7, 1.9), 0.014, 1.9);
+  float front = clouds(p + vec2(3.7, 1.9), 0.04, 1.9);
   float frontMask = smoothstep(threshold - 0.08, threshold + 0.2, front) * smoothstep(0.0, 0.85, uv.y);
   col = mix(col, uCloud * (0.72 + 0.28 * front), frontMask * 0.6);
 
   if (uFog > 0.001) {
-    float bank = fbm(p * 1.6 + vec2(uTime * 0.02, 0.0));
+    float bank = 0.6 * fbm(p * 1.6 + vec2(uTime * 0.05, 0.0)) + 0.4 * fbm(p * 2.7 - vec2(uTime * 0.08, uTime * 0.01));
     col = mix(col, uCloud * 0.9, uFog * smoothstep(0.75, 0.0, uv.y) * (0.35 + 0.4 * bank));
   }
 
   if (uRain > 0.001) {
-    float r = rainLayer(p, 38.0, 3.2, 0.35) * 0.18
-            + rainLayer(p + 1.7, 64.0, 4.4, 0.3) * 0.13
-            + rainLayer(p + 3.1, 96.0, 5.6, 0.25) * 0.09;
+    float r = rainLayer(p, 38.0, 4.2, 0.35) * 0.24
+            + rainLayer(p + 1.7, 64.0, 5.6, 0.3) * 0.17
+            + rainLayer(p + 3.1, 96.0, 7.0, 0.25) * 0.11;
     col += vec3(0.68, 0.78, 0.92) * r;
+    float mist = fbm(p * 3.0 + vec2(uTime * 0.3 * gust() / 0.12, 0.0));
+    col = mix(col, uCloud, uRain * 0.18 * mist * smoothstep(0.45, 0.0, uv.y));
   }
 
   if (uSnow > 0.001) {
