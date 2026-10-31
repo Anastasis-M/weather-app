@@ -18,6 +18,8 @@
     import Current from "#lib/components/Current.svelte";
     import Daily from "#lib/components/Daily.svelte";
     import Tips from "#lib/components/Tips.svelte";
+    import HourlyStrip from "#lib/components/HourlyStrip.svelte";
+    import Tiles from "#lib/components/Tiles.svelte";
     import SavedPlaces from "#lib/components/SavedPlaces.svelte";
     import SunArc from "#lib/components/SunArc.svelte";
     import MoonCard from "#lib/components/MoonCard.svelte";
@@ -410,7 +412,7 @@
 <Sky code={data?.current.weather_code ?? null} isDay={data?.current.is_day === 1} />
 
 <main
-    class="safe-pt safe-pb mx-auto min-h-screen w-full max-w-6xl lg:flex lg:h-screen lg:min-h-0 lg:flex-col lg:overflow-hidden"
+    class="safe-pt safe-pb mx-auto min-h-screen w-full max-w-6xl xl:max-w-[1400px] lg:flex lg:h-screen lg:min-h-0 lg:flex-col lg:overflow-hidden"
 >
     <div
         class="flex items-end justify-center overflow-hidden"
@@ -550,14 +552,10 @@
                     <span class="text-sm">{t("loading")}</span>
                 </div>
                 <div class="flex flex-col gap-3">
-                    <Skeleton class="h-52 w-full rounded-lg" />
-                    <div
-                        class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2"
-                    >
-                        <Skeleton class="h-16 rounded-lg" />
-                        <Skeleton class="h-16 rounded-lg" />
-                        <Skeleton class="h-16 rounded-lg" />
-                        <Skeleton class="h-16 rounded-lg" />
+                    <Skeleton class="h-44 w-full rounded-lg" />
+                    <div class="grid grid-cols-2 gap-3">
+                        <Skeleton class="aspect-square rounded-lg" />
+                        <Skeleton class="aspect-square rounded-lg" />
                     </div>
                 </div>
             </div>
@@ -608,27 +606,30 @@
                 </Alert.Root>
             </div>
         {/if}
+        <Current
+            data={data}
+            place={place}
+            saved={place ? isSaved(place) : false}
+            onToggleSave={() => place && toggleSaved(place)}
+        />
+
         <div
-            class="mt-1 lg:grid lg:grid-cols-[minmax(340px,420px)_minmax(0,1fr)] lg:gap-3 lg:px-5 lg:flex-1 lg:min-h-0"
+            class="flex flex-col lg:grid lg:grid-cols-[minmax(340px,420px)_minmax(0,1fr)] lg:gap-3 lg:px-5 lg:flex-1 lg:min-h-0 {place && showMap ? 'xl:grid-cols-[minmax(340px,400px)_minmax(560px,1fr)_minmax(300px,380px)]' : ''}"
         >
-            <div class="no-scrollbar lg:-mx-px lg:h-full lg:min-h-0 lg:overflow-y-auto lg:p-px">
-                <Current
-                    data={data}
-                    place={place}
-                    saved={place ? isSaved(place) : false}
-                    onToggleSave={() => place && toggleSaved(place)}
-                />
-                <Tips data={data} />
-                <SunArc data={data} />
-                <MoonCard data={data} />
+            <div class="contents no-scrollbar lg:-mx-px lg:block lg:h-full lg:min-h-0 lg:overflow-y-auto lg:p-px">
+                <div class="order-1 lg:order-none"><HourlyStrip data={data} /></div>
+                <div class="order-2 lg:order-none"><Tips data={data} /></div>
+                <div class="order-4 lg:order-none"><Tiles data={data} /></div>
+                <div class="order-5 lg:order-none"><SunArc data={data} /></div>
+                <div class="order-6 lg:order-none"><MoonCard data={data} /></div>
             </div>
             <div
-                class="no-scrollbar lg:-mx-px lg:flex lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-col lg:overflow-y-auto lg:p-px"
+                class="contents no-scrollbar lg:-mx-px lg:flex lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-col lg:overflow-y-auto lg:p-px xl:contents"
             >
-                <Daily data={data} />
+                <div class="order-3 lg:order-none xl:no-scrollbar xl:-mx-px xl:min-h-0 xl:overflow-y-auto xl:p-px"><Daily data={data} /></div>
                 {#if place && showMap}
                     <div
-                        class="weather-card mt-3 hidden min-h-[220px] flex-1 overflow-hidden rounded-lg lg:block"
+                        class="weather-card order-3 mx-5 mb-3 h-80 overflow-hidden rounded-lg lg:order-none lg:mx-0 lg:mt-3 lg:mb-0 lg:h-[420px] lg:shrink-0 xl:mt-0 xl:h-auto xl:min-h-0"
                     >
                         <MapCard
                             place={place}

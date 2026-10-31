@@ -160,7 +160,7 @@
 {/snippet}
 
 <section
-    class="select-none px-5 pb-8 lg:px-0 lg:pb-0 lg:flex lg:min-h-0 lg:flex-none lg:flex-col"
+    class="select-none px-5 pb-3 lg:px-0 lg:pb-0 lg:flex lg:min-h-0 lg:flex-none lg:flex-col"
 >
     <Card.Root
         class="weather-card gap-0 rounded-lg py-0 lg:min-h-0 lg:flex-1 lg:overflow-hidden"
@@ -279,7 +279,7 @@
                             openDay(i);
                         }
                     }}
-                    class="grid w-full cursor-pointer select-none grid-cols-[52px_26px_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 px-4 py-2 text-left sm:px-5 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50 active:bg-muted/55 min-[460px]:min-h-[56px] min-[460px]:py-0 sm:grid-cols-[62px_28px_minmax(0,1fr)_auto] lg:grid-cols-[84px_28px_minmax(0,1fr)_auto] lg:gap-3 xl:grid-cols-[84px_28px_128px_minmax(0,1fr)_auto]"
+                    class="grid w-full cursor-pointer select-none grid-cols-[52px_26px_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 px-4 py-2 text-left sm:px-5 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50 active:bg-muted/55 min-[460px]:min-h-[56px] min-[460px]:py-0 sm:grid-cols-[62px_28px_minmax(0,1fr)_auto] lg:grid-cols-[84px_28px_minmax(0,1fr)_auto] lg:gap-3"
                 >
                     <div>
                         <div
@@ -296,11 +296,6 @@
                         </div>
                     </div>
                     <Icon name={w.icon} size={24} class={iconColor(w.icon)} />
-                    <div
-                        class="hidden truncate text-sm text-muted-foreground xl:block"
-                    >
-                        {t(w.labelKey)}
-                    </div>
                     <div class="flex items-center gap-1.5 sm:gap-2">
                         <span
                             class="text-muted-foreground nums text-sm w-9 text-right"

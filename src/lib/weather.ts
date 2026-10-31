@@ -29,6 +29,10 @@ const HOURLY = [
   "relative_humidity_2m",
   "is_day",
   "uv_index",
+  "pressure_msl",
+  "dew_point_2m",
+  "visibility",
+  "wind_gusts_10m",
 ].join(",");
 
 const DAILY = [
@@ -54,6 +58,10 @@ const CURRENT = [
   "weather_code",
   "wind_speed_10m",
   "wind_direction_10m",
+  "wind_gusts_10m",
+  "pressure_msl",
+  "dew_point_2m",
+  "visibility",
 ].join(",");
 
 const AIR_QUALITY_CURRENT = [
