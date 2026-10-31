@@ -29,7 +29,10 @@ void main() {
 
   vec3 p = normalize(vPos);
   p.xy *= uMirror;
-  vec2 uv = vec2(0.5 + atan(p.x, p.z) / (2.0 * PI), 0.5 + asin(p.y) / PI);
+  float lon = atan(p.x, p.z) / (2.0 * PI);
+  float wrapped = fract(lon + 1.0) - 0.5;
+  float u = fwidth(lon) <= fwidth(wrapped) ? lon : wrapped + 0.5;
+  vec2 uv = vec2(0.5 + u, 0.5 + asin(p.y) / PI);
   vec3 albedo = texture2D(uMap, uv).rgb;
   albedo = clamp((albedo - 0.5) * 1.15 + 0.55, 0.0, 1.0);
 

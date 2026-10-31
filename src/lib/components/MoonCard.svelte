@@ -5,7 +5,8 @@
   import * as Card from '#lib/components/ui/card/index.js';
   import { fmtDayShort } from '#lib/format.js';
   import { locale, t } from '#lib/i18n.svelte.js';
-  import { daysUntilPhase, moonEvents, moonLitPath, moonPhase } from '#lib/moon.js';
+  import { daysUntilPhase, moonEvents, moonPhase } from '#lib/moon.js';
+  import MoonDisc from './moon/MoonDisc.svelte';
   import type { WeatherData } from '#lib/weather.js';
   import { hasWebgl } from '#lib/webgl.js';
 
@@ -58,21 +59,15 @@
         {t('moon.title')}
       </div>
 
-      <div class="mt-3 flex items-center gap-5">
+      <div class="relative mt-3 flex items-center gap-5">
         <div class="relative size-28 shrink-0" role="img" aria-label={t('moon.position', { phase: t(`moon.${phase.key}`), lit: Math.round(phase.illumination * 100) })}>
+          <div class="moon-halo pointer-events-none absolute -inset-5 rounded-full" aria-hidden="true"></div>
           {#if webgl}
             {#await import('./moon/MoonGlobe.svelte') then { default: MoonGlobe }}
-              <MoonGlobe cycle={phase.cycle} {southern} />
+              <MoonGlobe cycle={phase.cycle} {southern} interactive />
             {/await}
           {:else}
-            <svg viewBox="0 0 100 100" class="size-full">
-              <circle cx="50" cy="50" r="48" fill="var(--color-line)" />
-              <path
-                d={moonLitPath(phase.cycle, 50, 50, 48)}
-                fill="var(--color-snow)"
-                transform={southern ? 'matrix(-1 0 0 1 100 0)' : undefined}
-              />
-            </svg>
+            <MoonDisc cycle={phase.cycle} {southern} class="relative size-full" />
           {/if}
         </div>
 
@@ -108,14 +103,7 @@
       <ul class="mt-4 grid grid-cols-7 gap-1 border-t border-border pt-3">
         {#each nights as night (night.day)}
           <li class="flex flex-col items-center gap-1">
-            <svg viewBox="0 0 24 24" class="size-6" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" fill="var(--color-line)" />
-              <path
-                d={moonLitPath(night.cycle, 12, 12, 10)}
-                fill="var(--color-snow)"
-                transform={southern ? 'matrix(-1 0 0 1 24 0)' : undefined}
-              />
-            </svg>
+            <MoonDisc cycle={night.cycle} {southern} class="size-6" />
             <span class="text-[11px] text-muted-foreground">{fmtDayShort(night.day, undefined, locale())}</span>
           </li>
         {/each}
@@ -123,3 +111,17 @@
     </Card.Content>
   </Card.Root>
 </section>
+
+<style>
+  .moon-halo {
+    background: radial-gradient(circle, rgb(190 215 255 / 0.22) 30%, rgb(190 215 255 / 0) 70%);
+    animation: breathe 7s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { opacity: 0.7; transform: scale(0.94); }
+    50% { opacity: 1; transform: scale(1.06); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .moon-halo { animation: none; }
+  }
+</style>
