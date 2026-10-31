@@ -4,7 +4,7 @@
   import SunsetIcon from '@lucide/svelte/icons/sunset';
   import { t } from '#lib/i18n.svelte.js';
   import { localNowMs, sunState } from '#lib/sun.js';
-  import { moonLitPath, moonPhase } from '#lib/moon.js';
+  import { moonAltitude, moonLitPath, moonPhase } from '#lib/moon.js';
   import type { WeatherData } from '#lib/weather.js';
   import { hasWebgl } from '#lib/webgl.js';
 
@@ -37,10 +37,13 @@
   });
 
   const point = (p: number) => ({ x: CX - RX * Math.cos(Math.PI * p), y: BASE - RY * Math.sin(Math.PI * p) });
-  const arc = (to: number) =>
-    Array.from({ length: 49 }, (_, i) => point((i / 48) * to))
-      .map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`)
-      .join(' ');
+  const SAMPLES = 48;
+  const DIP = 12;
+  const MIN_PEAK = 25 * (Math.PI / 180);
+  const xAt = (p: number) => PAD + (W - 2 * PAD) * p;
+  const toPath = (points: { x: number; y: number }[]) =>
+    points.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const sunTrack = Array.from({ length: SAMPLES + 1 }, (_, i) => point(i / SAMPLES));
 
   const progress = $derived(sun?.progress ?? 0);
   const night = $derived(sun?.phase === 'night');
@@ -48,8 +51,27 @@
   const MOON_R = 12;
   const webgl = hasWebgl();
   const southern = $derived((data.latitude ?? 0) < 0);
-  const dot = $derived(point(progress));
-  const travelled = $derived(arc(progress));
+
+  const moonTrack = $derived.by(() => {
+    if (sun?.phase !== 'night') return null;
+    const offset = (data.utc_offset_seconds ?? 0) * 1000;
+    const span = sun.nightEnd - sun.nightStart;
+    const altAt = (p: number) => moonAltitude(sun.nightStart - offset + p * span, data.latitude, data.longitude);
+    const alts = Array.from({ length: SAMPLES + 1 }, (_, i) => altAt(i / SAMPLES));
+    const peak = Math.max(MIN_PEAK, ...alts);
+    const trough = Math.max(MIN_PEAK, ...alts.map((a) => -a));
+    const y = (a: number) => BASE - (a >= 0 ? (RY * a) / peak : (DIP * a) / trough);
+    const now = altAt(progress);
+    return {
+      points: alts.map((a, i) => ({ x: xAt(i / SAMPLES), y: y(a) })),
+      dot: { x: xAt(progress), y: Math.min(y(now), BASE) },
+      up: now > 0,
+    };
+  });
+  const track = $derived(moonTrack?.points ?? sunTrack);
+  const dot = $derived(moonTrack?.dot ?? point(progress));
+  const visible = $derived(moonTrack?.up ?? true);
+  const travelled = $derived(toPath([...track.filter((_, i) => i / SAMPLES < progress), dot]));
   const fill = $derived(`${travelled} L${dot.x.toFixed(1)},${BASE} L${PAD},${BASE} Z`);
 
   const duration = (ms: number) => {
@@ -58,6 +80,7 @@
     return t('sun.duration', { h: Math.floor(minutes / 60), m: String(minutes % 60).padStart(2, '0') });
   };
   const hhmm = (iso: string) => iso.slice(11, 16);
+  const localClock = (localMs: number) => new Date(localMs).toISOString().slice(11, 16);
 </script>
 
 {#if sun}
@@ -107,11 +130,15 @@
                 <stop offset="0%" stop-color="var(--color-snow)" stop-opacity="0.35" />
                 <stop offset="100%" stop-color="var(--color-snow)" stop-opacity="0" />
               </radialGradient>
+              <clipPath id="above-horizon">
+                <rect x="0" y={-H} width={W} height={H + BASE} />
+              </clipPath>
             </defs>
-            <path d={arc(1)} fill="none" stroke="var(--color-line)" stroke-width="1.5" stroke-dasharray="3 5" stroke-linecap="round" />
+            <path d={toPath(track)} fill="none" stroke="var(--color-line)" stroke-width="1.5" stroke-dasharray="3 5" stroke-linecap="round" />
             <line x1="6" x2={W - 6} y1={BASE} y2={BASE} stroke="var(--color-line)" stroke-width="1" />
-            <path d={fill} fill={night ? 'url(#moon-sky)' : 'url(#sun-sky)'} />
+            <path d={fill} fill={night ? 'url(#moon-sky)' : 'url(#sun-sky)'} clip-path="url(#above-horizon)" />
             <path
+              clip-path="url(#above-horizon)"
               d={travelled}
               fill="none"
               stroke={night ? 'var(--color-snow)' : 'var(--color-warn)'}
@@ -122,14 +149,18 @@
             <circle cx={PAD} cy={BASE} r="2.5" fill={night ? 'var(--color-snow)' : 'var(--color-warn)'} />
             <circle cx={W - PAD} cy={BASE} r="2.5" fill="var(--color-mute)" />
             {#if night}
-              <circle cx={dot.x} cy={dot.y} r="26" fill="url(#moon-glow)" />
+              {#if visible}
+                <circle cx={dot.x} cy={dot.y} r="26" fill="url(#moon-glow)" />
+              {/if}
               {#if !webgl}
+                <g opacity={visible ? 1 : 0.35}>
                 <circle cx={dot.x} cy={dot.y} r={MOON_R} fill="var(--color-line)" stroke="var(--color-mute)" stroke-width="0.75" />
                 <path
                   d={moonLitPath(moon.cycle, dot.x, dot.y, MOON_R)}
                   fill="var(--color-snow)"
                   transform={southern ? `matrix(-1 0 0 1 ${2 * dot.x} 0)` : undefined}
                 />
+                </g>
               {/if}
             {:else}
               <circle cx={dot.x} cy={dot.y} r="18" fill="url(#sun-glow)" />
@@ -139,7 +170,8 @@
           {#if night && webgl}
             {#await import('./moon/MoonGlobe.svelte') then { default: MoonGlobe }}
               <div
-                class="pointer-events-none absolute aspect-square -translate-x-1/2 -translate-y-1/2"
+                class="pointer-events-none absolute aspect-square -translate-x-1/2 -translate-y-1/2 transition-opacity"
+                class:opacity-35={!visible}
                 style:left="{(dot.x / W) * 100}%"
                 style:top="{(dot.y / H) * 100}%"
                 style:width="{((2 * MOON_R) / W) * 100}%"
@@ -152,10 +184,10 @@
         </div>
 
         <div class="nums -mt-0.5 flex justify-between text-xs text-muted-foreground">
-          {#if night}
+          {#if sun.phase === 'night'}
             <span class="flex items-center gap-1">
               <SunsetIcon class="size-3.5 text-warn" aria-label={t('sunset')} />
-              {hhmm(sun.sunset)}
+              {localClock(sun.nightStart)}
             </span>
             <span class="flex items-center gap-1">
               {hhmm(sun.sunrise)}

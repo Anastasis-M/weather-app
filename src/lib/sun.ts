@@ -2,7 +2,16 @@ export type SunDay = { sunrise: string; sunset: string };
 
 export type SunState =
   | { phase: 'day'; progress: number; left: number; length: number; sunrise: string; sunset: string }
-  | { phase: 'night'; progress: number; untilRise: number; length: number; sunrise: string; sunset: string };
+  | {
+      phase: 'night';
+      progress: number;
+      untilRise: number;
+      length: number;
+      sunrise: string;
+      sunset: string;
+      nightStart: number;
+      nightEnd: number;
+    };
 
 const DAY_MS = 86_400_000;
 const localMs = (iso: string) => Date.parse(`${iso}Z`);
@@ -23,6 +32,8 @@ export function sunState(nowMs: number, today: SunDay, tomorrow: SunDay | null):
       progress: Math.max(0, (nowMs - nightStart) / (rise - nightStart)),
       untilRise: rise - nowMs,
       length: set - rise,
+      nightStart,
+      nightEnd: rise,
       ...today,
     };
   }
@@ -38,6 +49,8 @@ export function sunState(nowMs: number, today: SunDay, tomorrow: SunDay | null):
     progress: Math.min(1, (nowMs - set) / (nextRise - set)),
     untilRise: nextRise - nowMs,
     length: nextSet - nextRise,
+    nightStart: set,
+    nightEnd: nextRise,
     ...tomorrow,
   };
 }

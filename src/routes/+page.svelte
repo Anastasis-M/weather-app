@@ -20,6 +20,7 @@
     import Tips from "#lib/components/Tips.svelte";
     import SavedPlaces from "#lib/components/SavedPlaces.svelte";
     import SunArc from "#lib/components/SunArc.svelte";
+    import MoonCard from "#lib/components/MoonCard.svelte";
     import Sky from "#lib/components/sky/Sky.svelte";
     import { Button } from "#lib/components/ui/button/index.js";
     import { Badge } from "#lib/components/ui/badge/index.js";
@@ -619,6 +620,7 @@
                 />
                 <Tips data={data} />
                 <SunArc data={data} />
+                <MoonCard data={data} />
             </div>
             <div
                 class="no-scrollbar lg:-mx-px lg:flex lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-col lg:overflow-y-auto lg:p-px"
