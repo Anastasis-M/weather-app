@@ -60,7 +60,8 @@ export function moonAltitude(utcMs: number, lat: number, lon: number): number {
   const hourAngle = RAD * (280.16 + 360.9856235 * d) + RAD * lon - ra;
   const phi = RAD * lat;
   const h = Math.asin(Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(hourAngle));
-  return h + (RAD * 0.017) / Math.tan(h + (RAD * 10.26) / (h + RAD * 5.1));
+  const refracted = Math.max(h, 0);
+  return h + (RAD * 0.017) / Math.tan(refracted + (RAD * 10.26) / (refracted + RAD * 5.1));
 }
 
 export type MoonEvents = { rise: number[]; set: number[] };
