@@ -32,16 +32,6 @@ export function moonPhase(utcMs: number): MoonPhase {
   return { cycle, illumination, key: PHASES[Math.round(cycle * PHASES.length) % PHASES.length] };
 }
 
-export function moonLitPath(cycle: number, cx: number, cy: number, r: number): string {
-  const terminator = Math.cos(2 * Math.PI * cycle);
-  const rx = Math.abs(terminator) * r;
-  const waxing = cycle < 0.5;
-  const outerSweep = waxing ? 1 : 0;
-  const crescent = terminator > 0;
-  const innerSweep = waxing === crescent ? 0 : 1;
-  return `M${cx},${cy - r} A${r},${r} 0 0 ${outerSweep} ${cx},${cy + r} A${rx},${r} 0 0 ${innerSweep} ${cx},${cy - r} Z`;
-}
-
 const HOUR_MS = 3_600_000;
 const RAD = Math.PI / 180;
 const OBLIQUITY = 23.4397 * RAD;

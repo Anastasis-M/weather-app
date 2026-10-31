@@ -4,9 +4,9 @@
   import SunsetIcon from '@lucide/svelte/icons/sunset';
   import { t } from '#lib/i18n.svelte.js';
   import { localNowMs, sunState } from '#lib/sun.js';
-  import { moonAltitude, moonLitPath, moonPhase } from '#lib/moon.js';
+  import { moonAltitude, moonPhase } from '#lib/moon.js';
   import type { WeatherData } from '#lib/weather.js';
-  import { hasWebgl } from '#lib/webgl.js';
+  import MoonCanvas from './moon/MoonCanvas.svelte';
 
   type Props = { data: WeatherData };
   let { data }: Props = $props();
@@ -49,7 +49,6 @@
   const night = $derived(sun?.phase === 'night');
   const moon = $derived(moonPhase(clock));
   const MOON_R = 12;
-  const webgl = hasWebgl();
   const southern = $derived((data.latitude ?? 0) < 0);
 
   const moonTrack = $derived.by(() => {
@@ -152,34 +151,21 @@
               {#if visible}
                 <circle cx={dot.x} cy={dot.y} r="26" fill="url(#moon-glow)" />
               {/if}
-              {#if !webgl}
-                <g opacity={visible ? 1 : 0.35}>
-                <circle cx={dot.x} cy={dot.y} r={MOON_R} fill="var(--color-line)" stroke="var(--color-mute)" stroke-width="0.75" />
-                <path
-                  d={moonLitPath(moon.cycle, dot.x, dot.y, MOON_R)}
-                  fill="var(--color-snow)"
-                  transform={southern ? `matrix(-1 0 0 1 ${2 * dot.x} 0)` : undefined}
-                />
-                </g>
-              {/if}
             {:else}
               <circle cx={dot.x} cy={dot.y} r="18" fill="url(#sun-glow)" />
               <circle cx={dot.x} cy={dot.y} r="6.5" fill="var(--color-warn)" />
             {/if}
           </svg>
-          {#if night && webgl}
-            {#await import('./moon/MoonGlobe.svelte') then { default: MoonGlobe }}
-              <div
-                class="pointer-events-none absolute aspect-square -translate-x-1/2 -translate-y-1/2 transition-opacity"
-                class:opacity-35={!visible}
-                style:left="{(dot.x / W) * 100}%"
-                style:top="{(dot.y / H) * 100}%"
-                style:width="{((2 * MOON_R) / W) * 100}%"
-                aria-hidden="true"
-              >
-                <MoonGlobe cycle={moon.cycle} {southern} />
-              </div>
-            {/await}
+          {#if night}
+            <div
+              class="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 transition-opacity"
+              class:opacity-35={!visible}
+              style:left="{(dot.x / W) * 100}%"
+              style:top="{(dot.y / H) * 100}%"
+              style:width="{((2 * MOON_R) / W) * 100}%"
+            >
+              <MoonCanvas cycle={moon.cycle} {southern} class="w-full" />
+            </div>
           {/if}
         </div>
 

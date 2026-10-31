@@ -6,15 +6,13 @@
   import { fmtDayShort } from '#lib/format.js';
   import { locale, t } from '#lib/i18n.svelte.js';
   import { daysUntilPhase, moonEvents, moonPhase } from '#lib/moon.js';
-  import MoonDisc from './moon/MoonDisc.svelte';
+  import MoonCanvas from './moon/MoonCanvas.svelte';
   import type { WeatherData } from '#lib/weather.js';
-  import { hasWebgl } from '#lib/webgl.js';
 
   type Props = { data: WeatherData };
   let { data }: Props = $props();
 
   const DAY_MS = 86_400_000;
-  const webgl = hasWebgl();
   const offsetMs = $derived((data.utc_offset_seconds ?? 0) * 1000);
   const now = $derived(Date.parse(`${data.current.time}Z`) - offsetMs);
   const today = $derived((data.current.time as string).slice(0, 10));
@@ -62,13 +60,7 @@
       <div class="relative mt-3 flex items-center gap-5">
         <div class="relative size-28 shrink-0" role="img" aria-label={t('moon.position', { phase: t(`moon.${phase.key}`), lit: Math.round(phase.illumination * 100) })}>
           <div class="moon-halo pointer-events-none absolute -inset-5 rounded-full" aria-hidden="true"></div>
-          {#if webgl}
-            {#await import('./moon/MoonGlobe.svelte') then { default: MoonGlobe }}
-              <MoonGlobe cycle={phase.cycle} {southern} interactive />
-            {/await}
-          {:else}
-            <MoonDisc cycle={phase.cycle} {southern} class="relative size-full" />
-          {/if}
+          <MoonCanvas cycle={phase.cycle} {southern} interactive class="relative w-full" />
         </div>
 
         <div class="min-w-0 flex-1">
@@ -103,7 +95,7 @@
       <ul class="mt-4 grid grid-cols-7 gap-1 border-t border-border pt-3">
         {#each nights as night (night.day)}
           <li class="flex flex-col items-center gap-1">
-            <MoonDisc cycle={night.cycle} {southern} class="size-6" />
+            <MoonCanvas cycle={night.cycle} {southern} class="w-6" />
             <span class="text-[11px] text-muted-foreground">{fmtDayShort(night.day, undefined, locale())}</span>
           </li>
         {/each}
