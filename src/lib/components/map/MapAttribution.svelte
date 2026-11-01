@@ -23,7 +23,7 @@
                 {...props}
                 variant="ghost"
                 size="icon"
-                class="weather-card pressable size-9 rounded-lg text-muted-foreground hover:text-foreground"
+                class="weather-card pressable size-9 rounded-lg text-muted-foreground hover:bg-popover hover:text-foreground dark:hover:bg-popover"
                 aria-label={t("map.attribution")}
             >
                 <InfoIcon class="size-4" />

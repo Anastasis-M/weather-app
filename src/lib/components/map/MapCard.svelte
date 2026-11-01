@@ -1,4 +1,5 @@
 <script lang="ts">
+    import type { Snippet } from "svelte";
     import LoaderIcon from "@lucide/svelte/icons/loader-2";
     import MaximizeIcon from "@lucide/svelte/icons/maximize-2";
     import { Button } from "#lib/components/ui/button/index.js";
@@ -9,7 +10,8 @@
         place,
         active = true,
         onexpand,
-    }: { place: Location; active?: boolean; onexpand?: () => void } = $props();
+        label,
+    }: { place: Location; active?: boolean; onexpand?: () => void; label?: Snippet } = $props();
 
     let el: HTMLElement;
     let WeatherMap = $state<
@@ -33,12 +35,12 @@
 
 <div bind:this={el} class="relative rounded-lg h-full w-full overflow-hidden">
     {#if WeatherMap}
-        <WeatherMap {place} {active}>
+        <WeatherMap {place} {active} {label} compact onopen={onexpand}>
             {#snippet action()}
                 <Button
                     variant="ghost"
                     size="icon"
-                    class="weather-card pressable size-9 rounded-lg text-muted-foreground hover:text-foreground"
+                    class="weather-card pressable size-9 rounded-lg text-muted-foreground hover:bg-popover hover:text-foreground dark:hover:bg-popover"
                     onclick={() => onexpand?.()}
                     aria-label={t("map.expand")}
                 >
@@ -47,6 +49,7 @@
             {/snippet}
         </WeatherMap>
     {:else}
+        <div class="absolute top-0 left-0 p-3">{@render label?.()}</div>
         <div class="flex h-full w-full items-center justify-center">
             <div class="flex items-center gap-2 text-sm text-muted-foreground">
                 <LoaderIcon class="size-4 animate-spin text-accent" />

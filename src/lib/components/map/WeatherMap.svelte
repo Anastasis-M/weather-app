@@ -30,7 +30,17 @@
         place,
         action,
         active = true,
-    }: { place: Location; action?: Snippet; active?: boolean } = $props();
+        compact = false,
+        label,
+        onopen,
+    }: {
+        place: Location;
+        action?: Snippet;
+        active?: boolean;
+        compact?: boolean;
+        label?: Snippet;
+        onopen?: () => void;
+    } = $props();
 
     const SLOTS = ["a", "b"] as const;
     const PRECIP_OPACITY = 0.8;
@@ -75,6 +85,7 @@
         const m = new OlMap({
             target,
             controls: [],
+            ...(compact && { interactions: [] }),
             layers: [
                 new TileLayer({ source: basemapSource() }),
                 layers.a,
@@ -89,6 +100,7 @@
             }),
         });
         map = m;
+        if (compact) m.on("click", () => onopen?.());
 
         return () => {
             map = undefined;
@@ -226,7 +238,13 @@
     class="relative h-full w-full overflow-hidden rounded-[inherit]"
     data-no-pull
 >
-    <div bind:this={el} class="absolute inset-0"></div>
+    <div bind:this={el} class="absolute inset-0" class:cursor-pointer={compact}></div>
+
+    {#if compact}
+        <div
+            class="pointer-events-none absolute inset-x-0 top-0 z-[5] h-20 bg-linear-to-b from-black/50 to-transparent"
+        ></div>
+    {/if}
 
     <div
         bind:this={markerEl}
@@ -236,9 +254,13 @@
     <div
         class="pointer-events-none absolute top-0 left-0 z-10 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))]"
     >
-        <div class="pointer-events-auto">
-            <MapControls {map} {zoom} min={ZOOM.min} max={ZOOM.max} />
-        </div>
+        {#if compact}
+            {@render label?.()}
+        {:else}
+            <div class="pointer-events-auto">
+                <MapControls {map} {zoom} min={ZOOM.min} max={ZOOM.max} />
+            </div>
+        {/if}
     </div>
 
     <div
