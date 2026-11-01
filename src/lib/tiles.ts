@@ -11,7 +11,20 @@ export const PRESSURE_MIN = 960;
 export const PRESSURE_MAX = 1060;
 
 export type HourlyItem =
-  | { kind: 'hour'; time: string; isNow: boolean; code: number; isDay: number; pop: number | null; temp: number }
+  | {
+      kind: 'hour';
+      time: string;
+      isNow: boolean;
+      code: number;
+      isDay: number;
+      pop: number | null;
+      chance: number | null;
+      temp: number;
+      mm: number;
+      wind: number | null;
+      windFrom: number | null;
+      gusts: number | null;
+    }
   | { kind: 'sun'; event: 'sunrise' | 'sunset'; time: string };
 
 export type FeelsReason = 'wind' | 'humidity' | 'cooler' | 'warmer' | 'similar';
@@ -62,6 +75,8 @@ export function hourlyItems(data: WeatherData, hours = 24): HourlyItem[] {
   const items: HourlyItem[] = [];
   for (let i = start; i < Math.min(times.length, start + hours); i++) {
     const pop = hourlyAt(data, 'precipitation_probability', i);
+    const wind = hourlyAt(data, 'wind_speed_10m', i);
+    const gusts = hourlyAt(data, 'wind_gusts_10m', i);
     items.push({
       kind: 'hour',
       time: times[i],
@@ -69,7 +84,12 @@ export function hourlyItems(data: WeatherData, hours = 24): HourlyItem[] {
       code: hourlyAt(data, 'weather_code', i) ?? 0,
       isDay: hourlyAt(data, 'is_day', i) ?? 1,
       pop: pop != null && pop >= 10 ? Math.round(pop) : null,
+      chance: pop != null ? Math.round(pop) : null,
       temp: hourlyAt(data, 'temperature_2m', i) ?? NaN,
+      mm: hourlyAt(data, 'precipitation', i) ?? 0,
+      wind: wind != null ? Math.round(wind) : null,
+      windFrom: hourlyAt(data, 'wind_direction_10m', i),
+      gusts: gusts != null ? Math.round(gusts) : null,
     });
     const hour = hourPrefix(times[i]);
     const markers = sunTimes

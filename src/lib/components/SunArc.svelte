@@ -83,9 +83,9 @@
 </script>
 
 {#if sun}
-  <section class="px-5 pb-3 lg:px-0 lg:pb-0 lg:pt-3">
-    <Card.Root class="weather-card gap-0 rounded-lg py-0">
-      <Card.Content class="px-4 pt-4 pb-4 sm:px-5">
+  <section class="h-full">
+    <Card.Root class="weather-card h-full gap-0 rounded-lg py-0">
+      <Card.Content class="flex flex-1 flex-col px-4 pt-4 pb-4 sm:px-5">
         <div class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
           <span class="font-medium">
             {#if sun.phase === 'day'}
@@ -103,6 +103,7 @@
           </span>
         </div>
 
+        <div class="mx-auto my-auto w-full max-w-md">
         <div class="relative mt-1">
           <svg
             viewBox="0 0 {W} {H}"
@@ -189,6 +190,7 @@
               <SunsetIcon class="size-3.5 text-warn" aria-label={t('sunset')} />
             </span>
           {/if}
+        </div>
         </div>
       </Card.Content>
     </Card.Root>

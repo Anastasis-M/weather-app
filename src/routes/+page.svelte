@@ -37,7 +37,6 @@
         saveWeather,
         loadWeather,
         latestWeather,
-        maxRainChanceAhead,
         type Location,
         type WeatherData,
     } from "#lib/weather.js";
@@ -55,6 +54,7 @@
 
     let place = $state<Location | null>(null);
     let data = $state<WeatherData | null>(null);
+    let mapCardEl = $state<HTMLElement>();
     let loading = $state(true);
     let loadingLocation = $state<Location | null>(null);
     let showingCachedAt = $state<number | null>(null);
@@ -64,13 +64,6 @@
     let updated = $state<Date | null>(null);
     let loadRequestId = 0;
     let search = $state<Search | null>(null);
-    const MAP_RAIN_CHANCE = 30;
-    const MAP_LOOKAHEAD_HOURS = 24;
-    const showMap = $derived(
-        !!place &&
-            !!data &&
-            maxRainChanceAhead(data, MAP_LOOKAHEAD_HOURS) > MAP_RAIN_CHANCE,
-    );
     let loadingMessage = $derived(
         [
         loadingLocation
@@ -412,7 +405,7 @@
 <Sky code={data?.current.weather_code ?? null} isDay={data?.current.is_day === 1} />
 
 <main
-    class="safe-pt safe-pb mx-auto min-h-screen w-full max-w-6xl xl:max-w-[1400px] lg:flex lg:h-screen lg:min-h-0 lg:flex-col lg:overflow-hidden"
+    class="safe-pt safe-pb mx-auto min-h-screen w-full max-w-6xl xl:max-w-[1400px]"
 >
     <div
         class="flex items-end justify-center overflow-hidden"
@@ -439,7 +432,7 @@
 
     <header class="sticky top-0 z-20 px-5 pt-4 pb-2 mb-2">
         <div
-            class="pointer-events-none absolute inset-x-0 top-0 -bottom-4 -z-10 bg-background/45 backdrop-blur-xl mask-b-from-60% transition-opacity duration-200 lg:hidden {scrolled
+            class="pointer-events-none absolute inset-x-0 top-0 -bottom-4 -z-10 bg-background/45 backdrop-blur-xl mask-b-from-60% transition-opacity duration-200 {scrolled
                 ? 'opacity-100'
                 : 'opacity-0'}"
             aria-hidden="true"
@@ -614,31 +607,37 @@
         />
 
         <div
-            class="flex flex-col lg:grid lg:grid-cols-[minmax(340px,420px)_minmax(0,1fr)] lg:gap-3 lg:px-5 lg:flex-1 lg:min-h-0 {place && showMap ? 'xl:grid-cols-[minmax(340px,400px)_minmax(560px,1fr)_minmax(300px,380px)]' : ''}"
+            class="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] lg:gap-3 lg:px-5"
         >
-            <div class="contents no-scrollbar lg:-mx-px lg:block lg:h-full lg:min-h-0 lg:overflow-y-auto lg:p-px">
-                <div class="order-1 lg:order-none"><HourlyStrip data={data} /></div>
-                <div class="order-2 lg:order-none"><Tips data={data} /></div>
-                <div class="order-4 lg:order-none"><Tiles data={data} /></div>
-                <div class="order-5 lg:order-none"><SunArc data={data} /></div>
-                <div class="order-6 lg:order-none"><MoonCard data={data} /></div>
-            </div>
-            <div
-                class="contents no-scrollbar lg:-mx-px lg:flex lg:h-full lg:min-h-0 lg:min-w-0 lg:flex-col lg:overflow-y-auto lg:p-px xl:contents"
-            >
-                <div class="order-3 lg:order-none xl:no-scrollbar xl:-mx-px xl:min-h-0 xl:overflow-y-auto xl:p-px"><Daily data={data} /></div>
-                {#if place && showMap}
-                    <div
-                        class="weather-card order-3 mx-5 mb-3 h-80 overflow-hidden rounded-lg lg:order-none lg:mx-0 lg:mt-3 lg:mb-0 lg:h-[420px] lg:shrink-0 xl:mt-0 xl:h-auto xl:min-h-0"
+            <div class="order-1 lg:order-none [&>section]:h-full"><HourlyStrip data={data} /></div>
+            <div class="order-2 lg:order-none [&>section]:h-full"><Tips data={data} /></div>
+            <div class="order-3 lg:order-none"><Daily data={data} /></div>
+            {#if place}
+                <div
+                    bind:this={mapCardEl}
+                    class="weather-card order-4 mx-5 mb-3 h-96 overflow-hidden rounded-lg lg:order-none lg:mx-0 lg:mb-0 lg:h-auto lg:min-h-96"
+                >
+                    <MapCard
+                        place={place}
+                        active={!mapOpen}
+                        onexpand={() => setSheetOpen("map", true)}
                     >
-                        <MapCard
-                            place={place}
-                            active={!mapOpen}
-                            onexpand={() => setSheetOpen("map", true)}
-                        />
-                    </div>
-                {/if}
+                        {#snippet label()}
+                            <h2 class="section-title flex items-center gap-1.5 px-1 pt-0.5 text-white [text-shadow:0_1px_6px_rgb(0_0_0/0.5)]">
+                                <MapIcon class="size-3.5 shrink-0" aria-hidden="true" />
+                                {t("map.card_title")}
+                            </h2>
+                        {/snippet}
+                    </MapCard>
+                </div>
+            {/if}
+            <div
+                class="order-6 grid gap-3 px-5 pb-3 lg:contents lg:[&>*:first-child]:order-2 lg:[&>*:last-child]:order-1"
+            >
+                <SunArc data={data} />
+                <MoonCard data={data} />
             </div>
+            <div class="order-5 lg:order-3 lg:col-span-2"><Tiles data={data} /></div>
         </div>
         <footer
             class="px-5 pb-8 text-center text-[11px] text-muted-foreground lg:pt-2"
@@ -664,5 +663,6 @@
     <MapDialog
         bind:open={() => mapOpen, (open) => setSheetOpen("map", open)}
         place={place}
+        origin={mapCardEl}
     />
 {/if}

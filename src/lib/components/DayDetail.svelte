@@ -111,12 +111,14 @@
 {/snippet}
 
 <div class="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 p-0.5 text-sm">
-    <Tabs.Root bind:value={metric} class="gap-3">
-        <Tabs.List class="w-full">
-            <Tabs.Trigger value="temp">{t("temp_trend")}</Tabs.Trigger>
-            <Tabs.Trigger value="rain">{t("precip")}</Tabs.Trigger>
-            <Tabs.Trigger value="wind">{t("wind")}</Tabs.Trigger>
-        </Tabs.List>
+    <Tabs.Root bind:value={metric} class="contents">
+        <div class="sticky top-0 z-10 -mx-0.5 -mt-0.5 bg-popover px-0.5 pt-0.5 pb-1.5">
+            <Tabs.List class="w-full">
+                <Tabs.Trigger value="temp">{t("temp_trend")}</Tabs.Trigger>
+                <Tabs.Trigger value="rain">{t("precip")}</Tabs.Trigger>
+                <Tabs.Trigger value="wind">{t("wind")}</Tabs.Trigger>
+            </Tabs.List>
+        </div>
 
         <section
             class="weather-card rounded-lg p-3"

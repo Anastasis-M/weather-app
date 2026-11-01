@@ -159,13 +159,9 @@
     </div>
 {/snippet}
 
-<section
-    class="select-none px-5 pb-3 lg:px-0 lg:pb-0 lg:flex lg:min-h-0 lg:flex-none lg:flex-col"
->
-    <Card.Root
-        class="weather-card gap-0 rounded-lg py-0 lg:min-h-0 lg:flex-1 lg:overflow-hidden"
-    >
-        <Card.Header class="border-b border-border/70 px-4 pt-4 pb-3! sm:px-5 lg:shrink-0">
+<section class="select-none px-5 pb-3 lg:px-0 lg:pb-0">
+    <Card.Root class="weather-card gap-0 rounded-lg py-0">
+        <Card.Header class="border-b border-border/70 px-4 pt-4 pb-3! sm:px-5">
             <div class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
                 <Card.Title class="section-title">
                     {t("forecast_7d")}
@@ -215,7 +211,7 @@
                 {/if}
             </div>
         </Card.Header>
-        <div class="pb-1.5 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+        <div class="pb-1.5">
         {#each daily.time as day, i}
             {@const w = describe(daily.weather_code[i], 1)}
             {@const { min, max, sum, wind, gusts, band, sumSpread, windSpread, models } = days[i]}

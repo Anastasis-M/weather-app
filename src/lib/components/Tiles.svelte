@@ -40,7 +40,7 @@
   const km = (n: number | null) => (n == null ? '—' : n >= 10 ? String(Math.round(n)) : n.toFixed(1));
 </script>
 
-<section class="grid grid-cols-2 gap-3 px-5 pb-3 sm:grid-cols-4 lg:grid-cols-2 lg:px-0 lg:pb-0 lg:pt-3">
+<section class="grid auto-rows-fr grid-cols-2 gap-3 px-5 pb-3 sm:grid-cols-4 lg:px-0 lg:pb-0">
   {#each tiles as tile (tile.kind)}
     {#if tile.kind === 'wind'}
       <TileFrame icon={WindIcon} title={t('wind')}>

@@ -49,15 +49,16 @@
   );
 </script>
 
-<section class="px-5 pb-3 lg:px-0 lg:pb-0 lg:pt-3">
-  <Card.Root class="weather-card gap-0 rounded-lg py-0">
-    <Card.Content class="px-4 pt-4 pb-4 sm:px-5">
+<section class="h-full">
+  <Card.Root class="weather-card h-full gap-0 rounded-lg py-0">
+    <Card.Content class="@container px-4 pt-4 pb-4 sm:px-5">
       <div class="flex items-center gap-1.5 font-medium">
         <MoonStarIcon class="size-4 text-snow" aria-hidden="true" />
         {t('moon.title')}
       </div>
 
-      <div class="relative mt-3 flex items-center gap-5">
+      <div class="@lg:mt-3 @lg:grid @lg:grid-cols-[minmax(0,1fr)_auto] @lg:items-center @lg:gap-x-6 @2xl:grid-cols-[auto_auto_minmax(0,1fr)]">
+      <div class="relative mt-3 flex items-center gap-5 @lg:mt-0">
         <div class="relative size-28 shrink-0" role="img" aria-label={t('moon.position', { phase: t(`moon.${phase.key}`), lit: Math.round(phase.illumination * 100) })}>
           <div class="moon-halo pointer-events-none absolute -inset-5 rounded-full" aria-hidden="true"></div>
           <MoonCanvas cycle={phase.cycle} {southern} interactive class="relative w-full" />
@@ -72,16 +73,16 @@
             <dt class="flex items-center gap-1 text-muted-foreground">
               <ArrowUpRightIcon class="size-3.5" aria-hidden="true" />{t('moon.rise')}
             </dt>
-            <dd>{rise.time} <span class="text-xs text-muted-foreground">{rise.day}</span></dd>
+            <dd class="whitespace-nowrap">{rise.time} <span class="text-xs text-muted-foreground">{rise.day}</span></dd>
             <dt class="flex items-center gap-1 text-muted-foreground">
               <ArrowDownRightIcon class="size-3.5" aria-hidden="true" />{t('moon.set')}
             </dt>
-            <dd>{set.time} <span class="text-xs text-muted-foreground">{set.day}</span></dd>
+            <dd class="whitespace-nowrap">{set.time} <span class="text-xs text-muted-foreground">{set.day}</span></dd>
           </dl>
         </div>
       </div>
 
-      <div class="mt-4 grid grid-cols-2 gap-2">
+      <div class="mt-4 grid grid-cols-2 gap-2 @lg:mt-0 @lg:grid-cols-1">
         <div class="rounded-md bg-secondary px-3 py-2">
           <div class="text-xs text-muted-foreground">{t('moon.next_new')}</div>
           <div class="nums text-sm font-medium">{countdown(daysUntilPhase(phase.cycle, 1))}</div>
@@ -92,7 +93,7 @@
         </div>
       </div>
 
-      <ul class="mt-4 grid grid-cols-7 gap-1 border-t border-border pt-3">
+      <ul class="mt-4 grid grid-cols-7 gap-1 border-t border-border pt-3 @lg:col-span-2 @2xl:col-span-1 @2xl:mt-0 @2xl:border-t-0 @2xl:border-l @2xl:pt-0 @2xl:pl-6">
         {#each nights as night (night.day)}
           <li class="flex flex-col items-center gap-1">
             <MoonCanvas cycle={night.cycle} {southern} class="w-6" />
@@ -100,6 +101,7 @@
           </li>
         {/each}
       </ul>
+      </div>
     </Card.Content>
   </Card.Root>
 </section>
