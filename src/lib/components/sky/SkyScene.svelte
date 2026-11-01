@@ -15,6 +15,7 @@
         uTop: { value: new Vector3() },
         uBottom: { value: new Vector3() },
         uCloud: { value: new Vector3() },
+        uShade: { value: new Vector3() },
         uGlow: { value: new Vector3() },
         uCover: { value: 0 },
         uRain: { value: 0 },
@@ -33,6 +34,7 @@
         uniforms.uTop.value.set(...l.top);
         uniforms.uBottom.value.set(...l.bottom);
         uniforms.uCloud.value.set(...l.cloud);
+        uniforms.uShade.value.set(...l.shade);
         uniforms.uGlow.value.set(...l.glow);
         uniforms.uCover.value = l.cover;
         uniforms.uRain.value = l.rain;

@@ -6,6 +6,7 @@ export type SkyLook = {
   top: Rgb;
   bottom: Rgb;
   cloud: Rgb;
+  shade: Rgb;
   glow: Rgb;
   cover: number;
   rain: number;
@@ -16,24 +17,24 @@ export type SkyLook = {
   storm: number;
 };
 
-type Palette = { top: string; bottom: string; cloud: string };
+type Palette = { top: string; bottom: string; cloud: string; shade: string };
 
 const DAY: Record<'clear' | 'overcast' | 'wet' | 'storm' | 'fog' | 'snow', Palette> = {
-  clear:    { top: '#3a7cc4', bottom: '#1b4a80', cloud: '#a3b2c6' },
-  overcast: { top: '#56657a', bottom: '#2c3644', cloud: '#7b8797' },
-  wet:      { top: '#3f4c5e', bottom: '#1f2833', cloud: '#637083' },
-  storm:    { top: '#3a3352', bottom: '#1a1626', cloud: '#554d70' },
-  fog:      { top: '#687079', bottom: '#3a4049', cloud: '#8d949e' },
-  snow:     { top: '#66748a', bottom: '#364152', cloud: '#a0aab8' },
+  clear:    { top: '#2363b3', bottom: '#5e97d2', cloud: '#f1f4f8', shade: '#7b8ca6' },
+  overcast: { top: '#5f6a79', bottom: '#7d8896', cloud: '#b3bbc5', shade: '#646e7b' },
+  wet:      { top: '#46505d', bottom: '#5c6672', cloud: '#8f99a5', shade: '#454e59' },
+  storm:    { top: '#2e3140', bottom: '#41444f', cloud: '#6c7080', shade: '#2a2c36' },
+  fog:      { top: '#6c737c', bottom: '#8c939b', cloud: '#a7adb5', shade: '#6a717a' },
+  snow:     { top: '#6b7788', bottom: '#8f99a7', cloud: '#c3cad4', shade: '#76808e' },
 };
 
 const NIGHT: typeof DAY = {
-  clear:    { top: '#0f1d3d', bottom: '#1d2f57', cloud: '#3a4762' },
-  overcast: { top: '#1c2430', bottom: '#262f3d', cloud: '#3d4654' },
-  wet:      { top: '#161d27', bottom: '#1e2632', cloud: '#363f4c' },
-  storm:    { top: '#1f1a33', bottom: '#110f1c', cloud: '#3a3456' },
-  fog:      { top: '#262c34', bottom: '#1a1e25', cloud: '#4a515c' },
-  snow:     { top: '#222b3a', bottom: '#2c3546', cloud: '#4e5869' },
+  clear:    { top: '#0a1530', bottom: '#1b2d52', cloud: '#56627c', shade: '#1f2739' },
+  overcast: { top: '#171d27', bottom: '#252e3b', cloud: '#454e5d', shade: '#1a2029' },
+  wet:      { top: '#12171f', bottom: '#1e2530', cloud: '#3b4451', shade: '#141920' },
+  storm:    { top: '#171922', bottom: '#252833', cloud: '#454959', shade: '#1a1c24' },
+  fog:      { top: '#232930', bottom: '#2c323a', cloud: '#4c535e', shade: '#252a31' },
+  snow:     { top: '#1e2633', bottom: '#2d3646', cloud: '#566071', shade: '#232a36' },
 };
 
 const SUN_GLOW = '#ffd27a';
@@ -52,17 +53,29 @@ function mix(a: Rgb, b: Rgb, t: number): Rgb {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 }
 
-function palette(sky: Sky, day: boolean): { top: Rgb; bottom: Rgb; cloud: Rgb } {
+type Colors = { top: Rgb; bottom: Rgb; cloud: Rgb; shade: Rgb };
+
+function palette(sky: Sky, day: boolean): Colors {
   const set = day ? DAY : NIGHT;
-  const pick = (p: Palette) => ({ top: hexToRgb(p.top), bottom: hexToRgb(p.bottom), cloud: hexToRgb(p.cloud) });
+  const pick = (p: Palette): Colors => ({
+    top: hexToRgb(p.top),
+    bottom: hexToRgb(p.bottom),
+    cloud: hexToRgb(p.cloud),
+    shade: hexToRgb(p.shade),
+  });
   if (sky.storm) return pick(set.storm);
   if (sky.snow >= 0.2) return pick(set.snow);
   if (sky.rain >= 0.2) return pick(set.wet);
   if (sky.fog) return pick(set.fog);
   const clear = pick(set.clear);
   const overcast = pick(set.overcast);
-  const t = Math.min(1, Math.max(0, (sky.cover - 0.3) / 0.6));
-  return { top: mix(clear.top, overcast.top, t), bottom: mix(clear.bottom, overcast.bottom, t), cloud: mix(clear.cloud, overcast.cloud, t) };
+  const t = Math.min(1, Math.max(0, (sky.cover - 0.4) / 0.5));
+  return {
+    top: mix(clear.top, overcast.top, t),
+    bottom: mix(clear.bottom, overcast.bottom, t),
+    cloud: mix(clear.cloud, overcast.cloud, t),
+    shade: mix(clear.shade, overcast.shade, t),
+  };
 }
 
 export function skyLook(sky: Sky, day: boolean): SkyLook {
@@ -85,6 +98,7 @@ export function lerpLook(from: SkyLook, to: SkyLook, t: number): SkyLook {
     top: mix(from.top, to.top, t),
     bottom: mix(from.bottom, to.bottom, t),
     cloud: mix(from.cloud, to.cloud, t),
+    shade: mix(from.shade, to.shade, t),
     glow: mix(from.glow, to.glow, t),
     cover: n(from.cover, to.cover),
     rain: n(from.rain, to.rain),
