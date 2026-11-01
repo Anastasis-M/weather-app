@@ -609,8 +609,8 @@
         <div
             class="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] lg:gap-3 lg:px-5"
         >
-            <div class="order-1 lg:order-none [&>section]:h-full"><HourlyStrip data={data} /></div>
-            <div class="order-2 lg:order-none [&>section]:h-full"><Tips data={data} /></div>
+            <div class="order-1 lg:order-none lg:[&:has(+:empty)]:col-span-2 [&>section]:h-full"><HourlyStrip data={data} /></div>
+            <div class="order-2 empty:hidden lg:order-none [&>section]:h-full"><Tips data={data} /></div>
             <div class="order-3 lg:order-none"><Daily data={data} /></div>
             {#if place}
                 <div

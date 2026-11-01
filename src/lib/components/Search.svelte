@@ -28,11 +28,6 @@
     let searchSeq = 0;
     let container: HTMLDivElement;
     let inputEl: HTMLInputElement | null = $state(null);
-    let dropdownLeft = $state(0);
-    let dropdownWidth = $state(0);
-    let dropdownStyle = $derived(
-        `left:${dropdownLeft}px;width:${dropdownWidth}px;`,
-    );
 
     function resultValue(r: Place) {
         return `${r.name}-${r.latitude}-${r.longitude}`;
@@ -67,39 +62,7 @@
         run(q);
     });
 
-    function updateDropdownMetrics() {
-        if (!container || typeof window === "undefined") return;
-
-        const pageMaxWidth = 1152;
-        const contentInset = 20;
-        const pageWidth = Math.min(window.innerWidth, pageMaxWidth);
-        const contentLeft =
-            Math.max(0, (window.innerWidth - pageWidth) / 2) + contentInset;
-        const contentWidth = Math.max(0, pageWidth - contentInset * 2);
-        const rect = container.getBoundingClientRect();
-
-        dropdownLeft = Math.round(contentLeft - rect.left);
-        dropdownWidth = Math.round(contentWidth);
-    }
-
-    $effect(() => {
-        if (!open) return;
-        q;
-        loading;
-        results.length;
-        requestAnimationFrame(updateDropdownMetrics);
-    });
-
-    onMount(() => {
-        const update = () => updateDropdownMetrics();
-        window.addEventListener("resize", update);
-        window.addEventListener("scroll", update, true);
-        return () => {
-            window.removeEventListener("resize", update);
-            window.removeEventListener("scroll", update, true);
-            clearTimeout(timer);
-        };
-    });
+    onMount(() => () => clearTimeout(timer));
 
     export function focus() {
         inputEl?.focus();
@@ -143,7 +106,7 @@
     }
 </script>
 
-<div class="relative w-full" bind:this={container}>
+<div class="w-full" bind:this={container}>
     <InputGroup.Root class="h-11 bg-card/40 pl-0.5 pr-0.5 shadow-xs">
         <InputGroup.Addon class="pl-2">
             <SearchIcon class="size-4 shrink-0 text-muted-foreground" />
@@ -198,8 +161,7 @@
                 const next = results.findIndex((r) => resultValue(r) === value);
                 if (next >= 0) active = next;
             }}
-            style={dropdownStyle}
-            class="absolute top-full z-30 mt-2 h-auto rounded-md bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10"
+            class="absolute inset-x-0 top-full z-30 mt-2 h-auto rounded-md bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10"
         >
             <Command.List class="max-h-80">
                 {#if loading && results.length === 0}
