@@ -50,7 +50,7 @@
     </h1>
   </div>
   {#if placeDetail}
-    <p class="mx-auto mt-0.5 max-w-[calc(100%-5.5rem)] truncate text-sm text-muted-foreground sm:max-w-[calc(100%-14rem)]">{placeDetail}</p>
+    <p class="mx-auto mt-0.5 max-w-[calc(100%-5.5rem)] truncate text-sm font-medium text-foreground/90 [text-shadow:0_1px_2px_rgb(0_0_0/0.45),0_1px_14px_rgb(0_0_0/0.45)] sm:max-w-[calc(100%-14rem)]">{placeDetail}</p>
   {/if}
 
   <div class="nums mt-1 text-[96px] font-extralight leading-none tracking-tight text-foreground sm:text-[104px]">
