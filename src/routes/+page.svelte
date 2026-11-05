@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
+    import { barButton, barSurface } from "#lib/barSurface.js";
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
     import { isSheetOpen, setSheetOpen } from "#lib/sheets.js";
@@ -59,7 +60,6 @@
     let loadingLocation = $state<Location | null>(null);
     let showingCachedAt = $state<number | null>(null);
     let refreshing = $state(false);
-    let scrolled = $state(false);
     let error = $state("");
     let updated = $state<Date | null>(null);
     let loadRequestId = 0;
@@ -401,7 +401,6 @@
     });
 </script>
 
-<svelte:window onscroll={() => (scrolled = window.scrollY > 0)} />
 <Sky code={data?.current.weather_code ?? null} isDay={data?.current.is_day === 1} />
 
 <main
@@ -430,13 +429,7 @@
         </Badge>
     </div>
 
-    <header class="sticky top-0 z-20 px-5 pt-4 pb-2 mb-2">
-        <div
-            class="pointer-events-none absolute left-1/2 top-0 -bottom-4 -z-10 w-screen -translate-x-1/2 bg-background/45 backdrop-blur-xl mask-b-from-60% transition-opacity duration-200 {scrolled
-                ? 'opacity-100'
-                : 'opacity-0'}"
-            aria-hidden="true"
-        ></div>
+    <header class="sticky top-0 z-30 px-5 pt-4 pb-2 mb-2">
         <div class="relative flex items-center gap-2">
             <div class="flex-1 min-w-0">
                 <Search bind:this={search} onSelect={load} onLocate={locate} />
@@ -448,7 +441,7 @@
                             {...props}
                             variant="outline"
                             size="icon"
-                            class="pressable h-11 w-auto rounded-md px-3 text-xs font-medium text-muted-foreground"
+                            class="pressable h-11 w-auto {barButton} px-3 text-xs font-medium text-muted-foreground"
                             onclick={toggleLang}
                             aria-label={t("language")}
                         >
@@ -469,7 +462,7 @@
                                 {...props}
                                 variant="outline"
                                 size="icon"
-                                class="pressable h-11 w-11 rounded-md text-muted-foreground"
+                                class="pressable h-11 w-11 {barButton} text-muted-foreground"
                                 onclick={() => setSheetOpen("map", true)}
                                 aria-label={t("map.title")}
                             >
@@ -486,8 +479,8 @@
                                 {...props}
                                 variant={copied ? "default" : "outline"}
                                 size="icon"
-                                class="pressable h-11 w-11 rounded-md {copied
-                                    ? 'border-accent/30 bg-accent/20 text-accent hover:bg-accent/25'
+                                class="pressable h-11 w-11 {barButton} {copied
+                                    ? 'border-accent/30 bg-accent/20 text-accent hover:bg-accent/25 dark:border-accent/30 dark:bg-accent/20 dark:hover:bg-accent/25'
                                     : 'text-muted-foreground'}"
                                 onclick={share}
                                 aria-label={t("share")}
@@ -509,7 +502,7 @@
                                 {...props}
                                 variant="outline"
                                 size="icon"
-                                class="pressable hidden h-11 w-11 rounded-md text-muted-foreground sm:inline-flex"
+                                class="pressable hidden h-11 w-11 {barButton} text-muted-foreground sm:inline-flex"
                                 onclick={refresh}
                                 disabled={refreshing}
                                 aria-label={t("refresh")}

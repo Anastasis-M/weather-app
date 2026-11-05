@@ -11,6 +11,7 @@
     import * as Tooltip from "#lib/components/ui/tooltip/index.js";
     import { searchPlaces, type Location, type Place } from "#lib/weather.js";
     import { i18n, t } from "#lib/i18n.svelte.js";
+    import { barSurface } from "#lib/barSurface.js";
 
     type Props = {
         onSelect?: (loc: Location) => void;
@@ -107,7 +108,7 @@
 </script>
 
 <div class="w-full" bind:this={container}>
-    <InputGroup.Root class="h-11 bg-card/40 pl-0.5 pr-0.5 shadow-xs">
+    <InputGroup.Root class="{barSurface} h-11 pl-0.5 pr-0.5">
         <InputGroup.Addon class="pl-2">
             <SearchIcon class="size-4 shrink-0 text-muted-foreground" />
         </InputGroup.Addon>
@@ -162,7 +163,7 @@
                 const next = results.findIndex((r) => resultValue(r) === value);
                 if (next >= 0) active = next;
             }}
-            class="absolute inset-x-0 top-full z-30 mt-2 h-auto rounded-xl! bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10"
+            class="absolute inset-x-0 top-full z-30 mt-2 h-auto rounded-lg! bg-popover p-1 text-popover-foreground shadow-[0_0_0_1px_rgb(255_255_255/0.07),0_12px_32px_-8px_rgb(0_0_0/0.5)]"
         >
             <Command.List class="max-h-80">
                 {#if loading && results.length === 0}
@@ -179,7 +180,7 @@
                         value={resultValue(r)}
                         onSelect={() => pick(r)}
                         forceMount
-                        class="min-h-10 cursor-pointer gap-3 rounded-[calc(var(--radius-xl)-0.25rem)] px-3 py-2.5 {i ===
+                        class="min-h-10 cursor-pointer gap-3 rounded-[calc(var(--radius-lg)-0.25rem)] px-3 py-2.5 {i ===
                         active
                             ? 'bg-muted text-foreground'
                             : 'hover:bg-muted/60'}"
