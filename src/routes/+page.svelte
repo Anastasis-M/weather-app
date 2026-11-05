@@ -429,10 +429,14 @@
         </Badge>
     </div>
 
-    <header class="sticky top-0 z-30 px-5 pt-4 pb-2 mb-2">
+    <header class="sticky top-[-0.5rem] z-30 px-5 pt-4 pb-2 mb-2">
         <div class="relative flex items-center gap-2">
             <div class="flex-1 min-w-0">
-                <Search bind:this={search} onSelect={load} onLocate={locate} />
+                <Search
+                    bind:this={search}
+                    onSelect={load}
+                    onLocate={locate}
+                />
             </div>
             <Tooltip.Root>
                 <Tooltip.Trigger>

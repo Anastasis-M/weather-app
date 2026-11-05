@@ -20,8 +20,8 @@
     let { onSelect, onLocate }: Props = $props();
 
     let q = $state("");
-    let results = $state<Place[]>([]);
     let open = $state(false);
+    let results = $state<Place[]>([]);
     let loading = $state(false);
     let active = $state(-1);
     let selectedValue = $state("");
@@ -108,7 +108,7 @@
 </script>
 
 <div class="w-full" bind:this={container}>
-    <InputGroup.Root class="{barSurface} h-11 pl-0.5 pr-0.5">
+    <InputGroup.Root class="{barSurface} h-11 pl-0.5 pr-0.5 has-[[data-slot=input-group-control]:focus-visible]:ring-0">
         <InputGroup.Addon class="pl-2">
             <SearchIcon class="size-4 shrink-0 text-muted-foreground" />
         </InputGroup.Addon>
@@ -163,7 +163,7 @@
                 const next = results.findIndex((r) => resultValue(r) === value);
                 if (next >= 0) active = next;
             }}
-            class="absolute inset-x-0 top-full z-30 mt-2 h-auto rounded-lg! bg-popover p-1 text-popover-foreground shadow-[0_0_0_1px_rgb(255_255_255/0.07),0_12px_32px_-8px_rgb(0_0_0/0.5)]"
+            class="absolute inset-x-0 top-full z-30 mt-2 h-auto rounded-lg! bg-card p-1 text-card-foreground backdrop-blur-xl shadow-[0_0_0_1px_rgb(255_255_255/0.07),0_12px_32px_-8px_rgb(0_0_0/0.5)]"
         >
             <Command.List class="max-h-80">
                 {#if loading && results.length === 0}
