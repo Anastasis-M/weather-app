@@ -432,7 +432,7 @@
 
     <header class="sticky top-0 z-20 px-5 pt-4 pb-2 mb-2">
         <div
-            class="pointer-events-none absolute inset-x-0 top-0 -bottom-4 -z-10 bg-background/45 backdrop-blur-xl mask-b-from-60% transition-opacity duration-200 {scrolled
+            class="pointer-events-none absolute left-1/2 top-0 -bottom-4 -z-10 w-screen -translate-x-1/2 bg-background/45 backdrop-blur-xl mask-b-from-60% transition-opacity duration-200 {scrolled
                 ? 'opacity-100'
                 : 'opacity-0'}"
             aria-hidden="true"

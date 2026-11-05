@@ -115,6 +115,7 @@
             bind:ref={inputEl}
             bind:value={q}
             onfocus={() => (open = true)}
+            oninput={() => (open = true)}
             onkeydown={onKey}
             type="search"
             placeholder={t("search_placeholder")}
@@ -161,7 +162,7 @@
                 const next = results.findIndex((r) => resultValue(r) === value);
                 if (next >= 0) active = next;
             }}
-            class="absolute inset-x-0 top-full z-30 mt-2 h-auto rounded-md bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10"
+            class="absolute inset-x-0 top-full z-30 mt-2 h-auto rounded-xl! bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10"
         >
             <Command.List class="max-h-80">
                 {#if loading && results.length === 0}
@@ -178,7 +179,7 @@
                         value={resultValue(r)}
                         onSelect={() => pick(r)}
                         forceMount
-                        class="min-h-10 cursor-pointer gap-3 px-3 py-2.5 {i ===
+                        class="min-h-10 cursor-pointer gap-3 rounded-[calc(var(--radius-xl)-0.25rem)] px-3 py-2.5 {i ===
                         active
                             ? 'bg-muted text-foreground'
                             : 'hover:bg-muted/60'}"
