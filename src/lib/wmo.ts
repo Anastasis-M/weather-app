@@ -13,6 +13,43 @@ export function isPrecipitation(code: number): boolean {
   return RAIN_CODES.has(code) || SNOW_CODES.has(code) || STORM_CODES.has(code);
 }
 
+const DRY_MM = 0.1;
+
+function cloudCode(coverPct: number): number {
+  if (coverPct < 20) return 0;
+  if (coverPct < 50) return 1;
+  if (coverPct < 85) return 2;
+  return 3;
+}
+
+function wetCode(mm: number, tempC: number): number {
+  const level = mm < 2.5 ? 0 : mm < 7.6 ? 1 : 2;
+  return (tempC <= 0 ? [71, 73, 75] : [61, 63, 65])[level];
+}
+
+export type HourMedians = { cover?: number; precip?: number; temp?: number };
+
+export function consensusCode(code: number, median: HourMedians): number {
+  const wet = isPrecipitation(code);
+  if (median.precip !== undefined) {
+    if (wet && median.precip < DRY_MM) return median.cover === undefined ? 3 : cloudCode(median.cover);
+    if (!wet && median.precip >= DRY_MM) return wetCode(median.precip, median.temp ?? 10);
+  }
+  if (code <= 3 && median.cover !== undefined) return cloudCode(median.cover);
+  return code;
+}
+
+export function dayCode(
+  hours: { code: number; isDay: boolean }[],
+  day: { sumMm?: number; maxTempC?: number } = {},
+): number {
+  const wet = hours.filter((h) => isPrecipitation(h.code));
+  if (!wet.length && day.sumMm !== undefined && day.sumMm >= DRY_MM) return wetCode(DRY_MM, day.maxTempC ?? 10);
+  const daylight = hours.filter((h) => h.isDay);
+  const counted = wet.length ? wet : daylight.length ? daylight : hours;
+  return Math.max(...counted.map((h) => h.code));
+}
+
 export type Sky = { cover: number; rain: number; snow: number; fog: boolean; storm: boolean };
 
 export function skyFor(code: number): Sky {

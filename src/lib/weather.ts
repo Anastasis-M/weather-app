@@ -1,3 +1,5 @@
+import { consensusCode, dayCode, type HourMedians } from "./wmo.js";
+
 const FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
 const AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality";
 const GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1/search";
@@ -134,7 +136,7 @@ const CONSENSUS_DAILY = [
   "wind_speed_10m_max",
   "wind_gusts_10m_max",
 ] as const;
-const CONSENSUS_HOURLY = ["temperature_2m", "wind_speed_10m", "precipitation"] as const;
+const CONSENSUS_HOURLY = ["temperature_2m", "wind_speed_10m", "precipitation", "cloud_cover"] as const;
 
 export type ConsensusVariable = (typeof CONSENSUS_DAILY)[number];
 export type ConsensusHourlyVariable = (typeof CONSENSUS_HOURLY)[number];
@@ -243,6 +245,46 @@ function withHourlyMedians(hourly: any, medians: Consensus["hourly"]): any {
   return merged;
 }
 
+function hourMedians(consensus: Consensus | null, time: string): HourMedians {
+  const hourly = consensus?.hourly;
+  return {
+    cover: hourly?.cloud_cover?.[time]?.median,
+    precip: hourly?.precipitation?.[time]?.median,
+    temp: hourly?.temperature_2m?.[time]?.median,
+  };
+}
+
+export function withConsensusCodes(weather: WeatherData, consensus: Consensus | null): WeatherData {
+  const hourly = weather?.hourly;
+  const codes: number[] | undefined = Array.isArray(hourly?.time)
+    ? hourly.time.map((time: string, i: number) => consensusCode(hourly.weather_code?.[i], hourMedians(consensus, time)))
+    : undefined;
+  const currentHour = weather?.current ? `${String(weather.current.time).slice(0, 13)}:00` : "";
+  const current = weather?.current && {
+    ...weather.current,
+    weather_code: consensusCode(weather.current.weather_code, hourMedians(consensus, currentHour)),
+  };
+  const daily = codes && Array.isArray(weather?.daily?.time) && {
+    ...weather.daily,
+    weather_code: weather.daily.time.map((day: string, d: number) => {
+      const hours = codes.flatMap((code, i) => {
+        const time: string = hourly.time[i];
+        return time.startsWith(day) && time >= currentHour ? [{ code, isDay: hourly.is_day?.[i] === 1 }] : [];
+      });
+      const ahead = day > currentHour.slice(0, 10)
+        ? { sumMm: consensus?.precipitation_sum?.[day]?.median, maxTempC: consensus?.temperature_2m_max?.[day]?.median }
+        : {};
+      return hours.length ? dayCode(hours, ahead) : weather.daily.weather_code?.[d];
+    }),
+  };
+  return {
+    ...weather,
+    ...(current && { current }),
+    ...(codes && { hourly: { ...hourly, weather_code: codes } }),
+    ...(daily && { daily }),
+  };
+}
+
 export async function fetchWeather({
   latitude,
   longitude,
@@ -267,7 +309,10 @@ export async function fetchWeather({
     fetchConsensus([{ latitude, longitude }], 7, { hourly: true }).then(([c]) => c, () => null),
   ]);
   const weather = await readWeatherJson(r);
-  return { ...weather, hourly: withHourlyMedians(weather?.hourly, consensus?.hourly), airQuality, consensus };
+  return withConsensusCodes(
+    { ...weather, hourly: withHourlyMedians(weather?.hourly, consensus?.hourly), airQuality, consensus },
+    consensus,
+  );
 }
 
 export type PlaceSummary = {
@@ -300,11 +345,13 @@ export async function fetchPlaceSummaries(
   u.searchParams.set("timezone", "auto");
   const [json, consensus] = await Promise.all([
     fetchWeatherResponse(u).then(readWeatherJson),
-    fetchConsensus(coords, 1).catch(() => coords.map(() => null)),
+    fetchConsensus(coords, 1, { hourly: true }).catch(() => coords.map(() => null)),
   ]);
   const list = Array.isArray(json) ? json : [json];
   const now = Date.now();
-  return coords.map((_, i) => parseSummary({ ...list[i], consensus: consensus[i] }, now));
+  return coords.map((_, i) =>
+    parseSummary(withConsensusCodes({ ...list[i], consensus: consensus[i] }, consensus[i]), now),
+  );
 }
 
 export async function searchPlaces(
