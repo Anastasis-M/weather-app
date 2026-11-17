@@ -36,12 +36,13 @@ const WMO_EN: Record<string, string> = {
 
 // Theme tokens mirroring src/app.css so the card matches the app.
 const C = {
-  bg: '#0a0a0b',
-  panel: '#111114',
-  line: '#22222a',
-  ink: '#f5f5f7',
-  sub: '#a0a0aa',
-  mute: '#6b6b75',
+  bg: 'linear-gradient(180deg, #2a3140 0%, #161b26 55%, #070a10 100%)',
+  panel: 'rgba(8, 11, 18, 0.72)',
+  line: 'rgba(255, 255, 255, 0.12)',
+  ring: 'rgba(255, 255, 255, 0.09)',
+  ink: '#f4f6fb',
+  sub: '#b4bdcc',
+  mute: '#7d8697',
   rain: '#60a5fa',
 };
 
@@ -163,7 +164,7 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
           width: '100%',
           height: '100%',
           background: C.panel,
-          border: `1px solid ${C.line}`,
+          border: `1px solid ${C.ring}`,
           borderRadius: '32px',
           display: 'flex',
           padding: '52px',
@@ -181,10 +182,9 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
               el(
                 {
                   display: 'flex',
-                  fontSize: '22px',
-                  color: C.sub,
-                  letterSpacing: '4px',
-                  textTransform: 'uppercase',
+                  fontSize: '34px',
+                  color: C.ink,
+                  fontWeight: 600,
                 },
                 city,
               ),
@@ -203,8 +203,8 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
                   ),
                   el(
                     {
-                      fontSize: '34px',
-                      color: C.ink,
+                      fontSize: '30px',
+                      color: C.sub,
                       marginTop: '8px',
                       fontWeight: 600,
                     },
@@ -233,11 +233,9 @@ export const GET: RequestHandler = async ({ url, fetch }) => {
               el(
                 {
                   display: 'flex',
-                  fontSize: '16px',
-                  color: C.sub,
-                  letterSpacing: '4px',
-                  textTransform: 'uppercase',
-                  marginBottom: '12px',
+                  fontSize: '22px',
+                  color: C.ink,
+                  marginBottom: '14px',
                   fontWeight: 600,
                 },
                 '7-day forecast',

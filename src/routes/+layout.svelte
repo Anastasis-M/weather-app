@@ -39,4 +39,4 @@
 <TooltipProvider delayDuration={200}>
     {@render children()}
 </TooltipProvider>
-<Toaster richColors position="top-center" />
+<Toaster position="top-center" />

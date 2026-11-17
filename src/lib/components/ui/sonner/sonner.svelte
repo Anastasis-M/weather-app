@@ -13,7 +13,16 @@
 <Sonner
 	theme={mode.current}
 	class="toaster group"
-	style="--normal-bg: var(--color-popover); --normal-text: var(--color-popover-foreground); --normal-border: var(--color-border);"
+	style="--normal-bg: var(--popover); --normal-text: var(--popover-foreground); --normal-border: transparent; --border-radius: var(--radius); font-family: var(--font-sans);"
+	toastOptions={{
+		classes: {
+			toast: "!shadow-[var(--shadow-border),0_8px_24px_rgb(0_0_0/0.35)] !text-sm !font-medium",
+			description: "!text-sub",
+			actionButton: "!bg-secondary !text-foreground !font-medium !rounded-lg hover:!bg-foreground/15",
+			cancelButton: "!bg-transparent !text-sub !rounded-lg",
+			icon: "!text-accent",
+		},
+	}}
 	{...restProps}
 >
 	{#snippet loadingIcon()}
